@@ -28,9 +28,11 @@
 <body ng-controller="bodyController">
 
   <!-- Login form -->
-  <div class="container" ng-controller="loginController" style="visibility:{{visibility}}">
+  <div id="auth-cover"></div>
+  <div id="auth" class="container" ng-controller="loginController" style="visibility:{{visibility}}">
     <form class="form-signin">
       <h2 class="form-signin-heading">Please sign in</h2>
+      <hr />
       <label for="inputUsername" class="sr-only">Username</label>
       <input type="text" id="inputUsername" class="form-control" placeholder="Username" autofocus="" ng-model="user.username">
       <label for="inputPassword" class="sr-only">Password</label>
@@ -40,13 +42,15 @@
           <input type="checkbox" value="remember-me"> Remember me
         </label>
       </div>
+      <hr />
       <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="doLogin()">Sign in</button>
       <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="doCheck()">Check</button>
     </form>
   </div>
 
-  <!-- Mouse manager form -->
+  <div class="jumbotron">
 
+  </div>
 
 </body>
 

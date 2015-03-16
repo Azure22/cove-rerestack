@@ -8,7 +8,7 @@ var crypto = require('crypto');
 
 //Database
 var pool = mysql.createPool({
-    connectionLimit: 100, //important
+    connectionLimit: 100,
     host: 'localhost',
     user: 'root',
     password: '',
@@ -16,6 +16,7 @@ var pool = mysql.createPool({
     debug: false
 });
 
+//Basic wrap for creating a connection
 function doQuery(req, res, queryfunc)
 {
     pool.getConnection(function (err, connection)
@@ -78,6 +79,7 @@ app.post('/api/authenticate', function (req, res)
         var qstr = "SELECT UserID FROM users WHERE Username = '" + username + "' AND Password = '" + password + "'";
         conn.query(qstr, function (err, row)
         {
+            conn.release();
             if (!err) {
                 if (row.length === 1) {
                     //Store db result in the profile
@@ -110,4 +112,3 @@ app.post('/api/check', function (req, res)
     console.log(decoded);
     res.json({ result: true });
 });
-

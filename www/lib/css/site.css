@@ -2,9 +2,25 @@ td {
     padding: 5px;
 }
 
-.form-signin {
-    position: absolute;
-    background-color: White;
-    z-index: 200;
-    width: 250px;
+input{
+    margin-top:10px;
+    margin-bottom:10px;
+}
+
+#auth-cover {
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 5;
+    width: 100%;
+    height: 100%;
+    display: none;
+}
+
+#auth {
+    border-width:1px;
+    border: 2px solid;
+    border-radius: 6px;
+    width: 300px;
 }
