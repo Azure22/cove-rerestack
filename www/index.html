@@ -1,0 +1,53 @@
+﻿<!DOCTYPE html>
+
+<html ng-app="coveApp">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CoVE - Rerestack</title>
+  <!-- CSS Libraries -->
+  <!-- UI -->
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+  <!-- Visualization -->
+  <link rel="stylesheet" href="./lib/css/site.css">
+  <!-- JS Libraries -->
+  <!-- JQuery -->
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  <!-- Bootstrap -->
+  <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+  <!-- AngularJS -->
+  <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.min.js"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular-route.js"></script>
+  <script src="./lib/js/angular/cove.js"></script>
+  <!-- Visualization -->
+  <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+</head>
+
+<body ng-controller="bodyController">
+
+  <!-- Login form -->
+  <div class="container" ng-controller="loginController" style="visibility:{{visibility}}">
+    <form class="form-signin">
+      <h2 class="form-signin-heading">Please sign in</h2>
+      <label for="inputUsername" class="sr-only">Username</label>
+      <input type="text" id="inputUsername" class="form-control" placeholder="Username" autofocus="" ng-model="user.username">
+      <label for="inputPassword" class="sr-only">Password</label>
+      <input type="password" id="inputPassword" class="form-control" placeholder="Password" ng-model="user.password">
+      <div class="checkbox">
+        <label>
+          <input type="checkbox" value="remember-me"> Remember me
+        </label>
+      </div>
+      <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="doLogin()">Sign in</button>
+      <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="doCheck()">Check</button>
+    </form>
+  </div>
+
+  <!-- Mouse manager form -->
+
+
+</body>
+
+</html>
