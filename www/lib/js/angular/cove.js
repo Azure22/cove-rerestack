@@ -7,7 +7,17 @@ app.run(function ($rootScope)
 
 app.controller('bodyController', ['$scope', function ($scope)
 {
-    //pass
+    $scope.display = 'none';
+
+    $scope.showLoginForm = function ()
+    {
+        $scope.display = 'normal';
+    }
+
+    $scope.hideLoginForm = function ()
+    {
+        $scope.display = 'none';
+    }
 }]);
 
 app.controller('loginController', ['$scope', '$http', '$window', function ($scope, $http, $window)
@@ -15,8 +25,7 @@ app.controller('loginController', ['$scope', '$http', '$window', function ($scop
     //Attributes
     $scope.user = { username: 'hanxi2', password: '123' };
     $scope.message = '';
-    $scope.visibility = 'visible';
-
+    
     //Methods
     $scope.doLogin = function ()
     {
@@ -27,7 +36,9 @@ app.controller('loginController', ['$scope', '$http', '$window', function ($scop
             $window.sessionStorage.token = data.token;
             $scope.message = 'Welcome!';
             console.log($window.sessionStorage);
-            //$scope.visibility = 'hidden';
+            
+            //This is in BodyController
+            //$scope.hideLoginForm();
         })
         .error(function (data, status, headers, config)
         {

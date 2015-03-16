@@ -27,29 +27,49 @@
 
 <body ng-controller="bodyController">
 
-  <!-- Login form -->
-  <div id="auth-cover"></div>
-  <div id="auth" class="container" ng-controller="loginController" style="visibility:{{visibility}}">
-    <form class="form-signin">
-      <h2 class="form-signin-heading">Please sign in</h2>
-      <hr />
-      <label for="inputUsername" class="sr-only">Username</label>
-      <input type="text" id="inputUsername" class="form-control" placeholder="Username" autofocus="" ng-model="user.username">
-      <label for="inputPassword" class="sr-only">Password</label>
-      <input type="password" id="inputPassword" class="form-control" placeholder="Password" ng-model="user.password">
-      <div class="checkbox">
-        <label>
-          <input type="checkbox" value="remember-me"> Remember me
-        </label>
+  <!-- Nav bar-->
+  <nav class="navbar navbar-default" role="navigation">
+    <div class="container-fluid">
+      <!-- Brand and toggle get grouped for better mobile display -->
+      <div class="navbar-header">
+        <a class="navbar-brand" href="index.html">MapReduce Visualization</a>
       </div>
-      <hr />
-      <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="doLogin()">Sign in</button>
-      <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="doCheck()">Check</button>
-    </form>
+
+      <!-- Collect the nav links, forms, and other content for toggling -->
+      <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+        <ul class="nav navbar-nav">
+          <li class="active"><a href="index.html">Home</a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right"></ul>
+      </div><!-- /.navbar-collapse -->
+    </div><!-- /.container-fluid -->
+  </nav>
+
+  <!-- Test placeholder-->
+  <div class="jumbotron">
+    <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="showLoginForm()">Show Form</button>
   </div>
 
-  <div class="jumbotron">
-
+  <!-- Login form -->
+  <div id="auth-cover" style="display:{{display}}" ng-click="hideLoginForm()">
+    <div id="auth" class="container">
+      <form class="form-signin" ng-controller="loginController">
+        <h2 class="form-signin-heading">Please sign in</h2>
+        <hr />
+        <label for="inputUsername" class="sr-only">Username</label>
+        <input type="text" id="inputUsername" class="form-control" placeholder="Username" autofocus="" ng-model="user.username">
+        <label for="inputPassword" class="sr-only">Password</label>
+        <input type="password" id="inputPassword" class="form-control" placeholder="Password" ng-model="user.password">
+        <div class="checkbox">
+          <label>
+            <input type="checkbox" value="remember-me"> Remember me
+          </label>
+        </div>
+        <hr />
+        <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="doLogin()">Sign in</button>
+        <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="doCheck()">Check</button>
+      </form>
+    </div>
   </div>
 
 </body>
