@@ -47,28 +47,39 @@
 
   <!-- Test placeholder-->
   <div class="jumbotron">
-    <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="showLoginForm()">Show Form</button>
+    <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="showAuthForm()">Show Form</button>
+
+    <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="doSignOut()">Sign Out</button>
   </div>
 
   <!-- Login form -->
-  <div id="auth-cover" style="display:{{display}}" ng-click="hideLoginForm()">
-    <div id="auth" class="container">
-      <form class="form-signin" ng-controller="loginController">
-        <h2 class="form-signin-heading">Please sign in</h2>
-        <hr />
-        <label for="inputUsername" class="sr-only">Username</label>
-        <input type="text" id="inputUsername" class="form-control" placeholder="Username" autofocus="" ng-model="user.username">
-        <label for="inputPassword" class="sr-only">Password</label>
-        <input type="password" id="inputPassword" class="form-control" placeholder="Password" ng-model="user.password">
-        <div class="checkbox">
-          <label>
-            <input type="checkbox" value="remember-me"> Remember me
-          </label>
+  <div id="auth-cover" style="display:{{auth_display}}">
+
+    <div role="tabpanel" id="auth">
+
+      <!-- Nav tabs -->
+      <ul class="nav nav-tabs nav-justified" role="tablist">
+        <li role="presentation" class="active"><a href="#signin" aria-controls="signin" role="tab" data-toggle="tab">Sign in</a></li>
+        <li role="presentation"><a href="#signup" aria-controls="signup" role="tab" data-toggle="tab">Sign up</a></li>
+      </ul>
+
+      <!-- Tab panes -->
+      <div class="tab-content">
+        <div role="tabpanel" class="tab-pane active" id="signin">
+          <form class="form-auth">
+            <label for="inputUsername" class="sr-only">Username</label>
+            <input type="text" id="inputUsername" class="form-control" placeholder="Username" autofocus="" ng-model="user.username">
+            <label for="inputPassword" class="sr-only">Password</label>
+            <input type="password" id="inputPassword" class="form-control" placeholder="Password" ng-model="user.password">
+            <label class="auth-message">{{signin_message}}</label>
+            <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="doSignIn()">Sign in</button>
+          </form>
         </div>
-        <hr />
-        <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="doLogin()">Sign in</button>
-        <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="doCheck()">Check</button>
-      </form>
+        <div role="tabpanel" class="tab-pane" id="signup">
+          <label class="form-message">{{signup_message}}</label>
+          <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="doCheck()">Check</button>
+        </div>
+      </div>
     </div>
   </div>
 

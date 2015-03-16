@@ -2,6 +2,14 @@ td {
     padding: 5px;
 }
 
+.form-auth{
+    margin-top:20px;
+}
+
+.auth-message{
+    margin:2px;
+}
+
 input{
     margin-top:10px;
     margin-bottom:10px;
@@ -23,7 +31,7 @@ input{
     border-radius: 4px;
     width: 300px;
     background: rgb(255,255,255);
-    padding-bottom: 15px;
+    padding: 15px;
 
     position: absolute;
     left: 50%;

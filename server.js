@@ -93,7 +93,6 @@ app.post('/api/authenticate', function (req, res)
                     res.json({ token: token });
                 }
                 else {
-                    console.log('Query not success.')
                     res.send(401, 'invalid username or password');
                 }
             }
@@ -107,8 +106,15 @@ app.post('/api/authenticate', function (req, res)
 app.post('/api/check', function (req, res)
 {
     console.log(req.body.token);
-    var token = req.body.token;
-    var decoded = jwt.verify(token, secret);
-    console.log(decoded);
-    res.json({ result: true });
+    if (req.body.token)
+    {
+        var token = req.body.token;
+        var decoded = jwt.verify(token, secret);
+        console.log(decoded);
+        res.json({ result: true });
+    }
+    else
+    {
+        res.json({ result: false });
+    }
 });
