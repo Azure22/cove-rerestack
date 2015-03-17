@@ -62,10 +62,8 @@ app.listen(app.get('port'), function(){
     app.get('port') + '; press Ctrl-C to terminate.' );
 });
 
-//app.use('/api', expressJwt({ secret: secret }));
-
-//User login
-app.post('/api/authenticate', function (req, res)
+// User login
+app.post('/api/login', function (req, res)
 {
     var username = req.body.username
     var password = req.body.password
@@ -102,7 +100,7 @@ app.post('/api/authenticate', function (req, res)
     });
 });
 
-//Login verification
+// Authentication verification
 app.post('/api/check', function (req, res)
 {
     console.log(req.body.token);
@@ -115,6 +113,21 @@ app.post('/api/check', function (req, res)
     }
     else
     {
+        res.json({ result: false });
+    }
+});
+
+// Get colony list
+app.get('/api/colonylist', function (req, res)
+{
+    console.log(req.body.token);
+    if (req.body.token) {
+        var token = req.body.token;
+        var decoded = jwt.verify(token, secret);
+        console.log(decoded);
+        res.json({ result: true });
+    }
+    else {
         res.json({ result: false });
     }
 });

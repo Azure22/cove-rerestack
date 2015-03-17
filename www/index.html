@@ -49,7 +49,7 @@
   <div class="jumbotron">
     <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="showAuthForm()">Show Form</button>
 
-    <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="doSignOut()">Sign Out</button>
+    <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="logout()">Sign Out</button>
   </div>
 
   <!-- Login form -->
@@ -72,12 +72,12 @@
             <label for="inputPassword" class="sr-only">Password</label>
             <input type="password" id="inputPassword" class="form-control" placeholder="Password" ng-model="user.password">
             <label class="auth-message">{{signin_message}}</label>
-            <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="doSignIn()">Sign in</button>
+            <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="login()">Sign in</button>
           </form>
         </div>
         <div role="tabpanel" class="tab-pane" id="signup">
           <label class="form-message">{{signup_message}}</label>
-          <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="doCheck()">Check</button>
+          <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="check()">Check</button>
         </div>
       </div>
     </div>

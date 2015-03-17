@@ -1,11 +1,37 @@
 var app = angular.module('coveApp', []);
 
+//options.api.base_url = 'http://localhost:3000/api'
+
 app.run(function ($rootScope)
 {
     // pass
 });
 
-app.controller('bodyController', ['$scope', '$http', '$window', function ($scope, $http, $window)
+app.factory('authService', function ($http)
+{
+    return {
+        isLogged: false,
+
+        // Param user: { username: xxx, password: xxx }
+        login: function (user)
+        {
+            return $http.post('/api/login', user);
+        },
+
+        logout: function ()
+        {
+
+        },
+
+        // Param token: { token: xxx }
+        check: function (token)
+        {
+            return $http.post('/api/check', token);
+        }
+    }
+});
+
+app.controller('bodyController', ['$scope', '$location', '$window', 'authService', function ($scope, $location, $window, authService)
 {
     // Attributes
     $scope.user = { username: 'hanxi2', password: '123' };
@@ -27,7 +53,7 @@ app.controller('bodyController', ['$scope', '$http', '$window', function ($scope
         $scope.auth_display = 'none';
     };
 
-    $scope.doSignOut = function ()
+    $scope.logout = function ()
     {
         if ($window.sessionStorage.token) {
             console.log('Ready to logout');
@@ -39,7 +65,7 @@ app.controller('bodyController', ['$scope', '$http', '$window', function ($scope
     };
 
     // Methods
-    $scope.doSignIn = function ()
+    $scope.login = function ()
     {
         if ($window.sessionStorage.token)
         {
@@ -47,12 +73,13 @@ app.controller('bodyController', ['$scope', '$http', '$window', function ($scope
             return;
         }
 
-        $http.post('/api/authenticate', $scope.user)
+        authService.login($scope.user)
         .success(function (data, status, headers, config)
         {
             // Get the response of post and store it in the session
             $window.sessionStorage.token = data.token;
             $scope.signin_message = 'Welcome!';
+
             console.log($window.sessionStorage);
 
             // This is in BodyController
@@ -66,10 +93,10 @@ app.controller('bodyController', ['$scope', '$http', '$window', function ($scope
         });
     };
 
-    $scope.doCheck = function ()
+    $scope.check = function ()
     {
         // Post the token back to the server, in which it will be decoded
-        $http.post('/api/check', { token: $window.sessionStorage.token })
+        authService.check({ token: $window.sessionStorage.token })
         .success(function (data, status, headers, config)
         {
             $scope.signup_message = 'Check result: ' + data.result;
@@ -85,4 +112,6 @@ app.controller('colonyController', ['$scope', function ($scope)
 {
     // pass
 }]);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
