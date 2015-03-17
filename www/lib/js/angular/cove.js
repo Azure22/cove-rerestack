@@ -7,10 +7,25 @@ app.run(function ($rootScope)
     // pass
 });
 
-app.factory('authService', function ($http)
+app.factory('authService', function ($http, $window)
 {
     return {
-        isLogged: false,
+        isAnonymus: true,
+
+        setToken: function (value)
+        {
+            $window.sessionStorage.token = value;
+        },
+
+        getToken: function ()
+        {
+            return $window.sessionStorage.token;
+        },
+
+        destoryToken: function ()
+        {
+            if ($window.sessionStorage.token) delete $window.sessionStorage.token;
+        },
 
         // Param user: { username: xxx, password: xxx }
         login: function (user)
@@ -23,15 +38,32 @@ app.factory('authService', function ($http)
 
         },
 
-        // Param token: { token: xxx }
-        check: function (token)
+        check: function ()
         {
-            return $http.post('/api/check', token);
+            return $http.get('/api/check');
         }
     }
 });
 
-app.controller('bodyController', ['$scope', '$location', '$window', 'authService', function ($scope, $location, $window, authService)
+app.factory('tokenInterceptor', ['$window', function ($window)
+{
+    return {
+        request: function (config)
+        {
+            if ($window.sessionStorage.token) {
+                config.headers.token = $window.sessionStorage.token;
+            }
+            return config;
+        }
+    }
+}]);
+
+app.config(['$httpProvider', function ($httpProvider)
+{
+    $httpProvider.interceptors.push('tokenInterceptor');
+}]);
+
+app.controller('bodyController', ['$scope', '$location', 'authService', function ($scope, $location, authService)
 {
     // Attributes
     $scope.user = { username: 'hanxi2', password: '123' };
@@ -55,19 +87,13 @@ app.controller('bodyController', ['$scope', '$location', '$window', 'authService
 
     $scope.logout = function ()
     {
-        if ($window.sessionStorage.token) {
-            console.log('Ready to logout');
-            delete $window.sessionStorage.token;
-        }
-        else {
-            console.log('Not login yet');
-        }
+        authService.destoryToken();
     };
 
     // Methods
     $scope.login = function ()
     {
-        if ($window.sessionStorage.token)
+        if (authService.getToken())
         {
             $scope.hideAuthForm();
             return;
@@ -77,18 +103,17 @@ app.controller('bodyController', ['$scope', '$location', '$window', 'authService
         .success(function (data, status, headers, config)
         {
             // Get the response of post and store it in the session
-            $window.sessionStorage.token = data.token;
+            authService.setToken(data.token);
+            authService.isAnonymus = false;
             $scope.signin_message = 'Welcome!';
-
-            console.log($window.sessionStorage);
-
+            console.log(authService.getToken());
             // This is in BodyController
             $scope.hideAuthForm();
         })
         .error(function (data, status, headers, config)
         {
             // Erase the token if the user fails to log in
-            delete $window.sessionStorage.token;
+            authService.destoryToken();
             $scope.signin_message = 'Error: Invalid user or password';
         });
     };
@@ -96,7 +121,7 @@ app.controller('bodyController', ['$scope', '$location', '$window', 'authService
     $scope.check = function ()
     {
         // Post the token back to the server, in which it will be decoded
-        authService.check({ token: $window.sessionStorage.token })
+        authService.check()
         .success(function (data, status, headers, config)
         {
             $scope.signup_message = 'Check result: ' + data.result;

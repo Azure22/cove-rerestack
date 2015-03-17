@@ -101,12 +101,11 @@ app.post('/api/login', function (req, res)
 });
 
 // Authentication verification
-app.post('/api/check', function (req, res)
+app.get('/api/check', function (req, res)
 {
-    console.log(req.body.token);
-    if (req.body.token)
+    var token = req.headers.token;
+    if (token)
     {
-        var token = req.body.token;
         var decoded = jwt.verify(token, secret);
         console.log(decoded);
         res.json({ result: true });
@@ -115,6 +114,12 @@ app.post('/api/check', function (req, res)
     {
         res.json({ result: false });
     }
+});
+
+// Get colony list
+app.get('/api/test', function (req, res)
+{
+    console.log(req.headers);
 });
 
 // Get colony list
