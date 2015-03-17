@@ -7,7 +7,17 @@ app.run(function ($rootScope)
     // pass
 });
 
-app.factory('authService', function ($http, $window)
+app.factory('colonyService', ['$http', function ($http)
+{
+    return {
+        getColonyList: function ()
+        {
+            return $http.get('/api/colonylist');
+        }
+    }
+}]);
+
+app.factory('authService', ['$http', '$window', function ($http, $window)
 {
     return {
         isAnonymus: true,
@@ -43,7 +53,7 @@ app.factory('authService', function ($http, $window)
             return $http.get('/api/check');
         }
     }
-});
+}]);
 
 app.factory('tokenInterceptor', ['$window', function ($window)
 {
@@ -133,9 +143,19 @@ app.controller('bodyController', ['$scope', '$location', 'authService', function
     };
 }]);
 
-app.controller('colonyController', ['$scope', function ($scope)
+app.controller('colonyController', ['$scope', 'colonyService', function ($scope, colonyService)
 {
-    // pass
+    $scope.colony_list = {};
+
+    $scope.getColonyList = function ()
+    {
+        colonyService.getColonyList()
+        .success(function (data, status, headers, config)
+        {
+            console.log(data);
+            $scope.colony_list = data.colonylist;
+        })
+    }
 }]);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////

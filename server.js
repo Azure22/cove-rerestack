@@ -117,22 +117,25 @@ app.get('/api/check', function (req, res)
 });
 
 // Get colony list
-app.get('/api/test', function (req, res)
-{
-    console.log(req.headers);
-});
-
-// Get colony list
 app.get('/api/colonylist', function (req, res)
 {
-    console.log(req.body.token);
-    if (req.body.token) {
-        var token = req.body.token;
-        var decoded = jwt.verify(token, secret);
-        console.log(decoded);
-        res.json({ result: true });
+    if (req.headers.token) {
+        var uid = jwt.verify(req.headers.token, secret).uid;
+        console.log(uid);
+        doQuery(req, res, function (conn)
+        {
+            var qstr = "SELECT cid, control FROM user_colonies WHERE uid = '" + uid + "'";
+            conn.query(qstr, function (err, row)
+            {
+                conn.release();
+                if (!err)
+                    res.json({ colonylist: row });
+                else
+                    console.log(err);
+            });
+        });
     }
     else {
-        res.json({ result: false });
+        res.send(401, 'unautherized');
     }
 });
