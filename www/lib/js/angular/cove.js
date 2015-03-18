@@ -16,6 +16,12 @@ app.factory('colonyService', ['$http', function ($http)
         getColonyList: function ()
         {
             return $http.get('/api/colonylist');
+        },
+
+        // Param colony: { cid: xxx }
+        getColonyData: function (colony)
+        {
+            return $http.post('/api/colonydata', colony);
         }
     }
 }]);
@@ -167,6 +173,7 @@ app.controller('bodyController', ['$scope', '$location', 'authService', 'tokenSe
 app.controller('colonyController', ['$scope', 'colonyService', function ($scope, colonyService)
 {
     $scope.colony_list = {};
+    $scope.colony_data = {};
 
     $scope.getColonyList = function ()
     {
@@ -175,6 +182,23 @@ app.controller('colonyController', ['$scope', 'colonyService', function ($scope,
         {
             console.log(data);
             $scope.colony_list = data.colonylist;
+        })
+    }
+
+    $scope.getColonyData = function (cid)
+{
+        console.log(cid);
+        colonyService.getColonyData({ cid: cid })
+        .success(function (data, status, headers, config)
+        {
+            $scope.colony_data = JSON.parse(data.colonydata[0].data);
+            console.log($scope.colony_data);
+
+            //TODO
+            //$scope.initialize($scope.colony_data);
+
+            //TODO
+            //child_plot_link($scope, ['#graph']);
         })
     }
 }]);
