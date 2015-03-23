@@ -139,3 +139,28 @@ app.get('/api/colonylist', function (req, res)
         res.send(401, 'unautherized');
     }
 });
+
+// Get colony data
+app.post('/api/colonydata', function (req, res)
+{
+    if (req.headers.token) {
+        // TODO
+        //var uid = jwt.verify(req.headers.token, secret).uid;
+        var cid = req.body.cid;
+        doQuery(req, res, function (conn)
+        {
+            var qstr = "SELECT colonies.data FROM colonies WHERE cid = " + cid;
+            conn.query(qstr, function (err, row)
+            {
+                conn.release();
+                if (!err)
+                    res.json({ colonydata: row });
+                else
+                    console.log(err);
+            });
+        });
+    }
+    else {
+        res.send(401, 'unautherized');
+    }
+});
