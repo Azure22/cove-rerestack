@@ -210,6 +210,7 @@ function ColonyMouse()
             return this;
         }
 
+        //Methods
         this.addChild = function (mouseId)
         {
             if (!(mouseId in this._childIds)) {

@@ -22,6 +22,15 @@ app.factory('colonyService', ['$http', function ($http)
         getColonyData: function (colony)
         {
             return $http.post('/api/colonydata', colony);
+        },
+
+        drawColony:function (data)
+        {
+            //console.log("!!");
+            create_initial_view(initialize(data, "localhost"));
+            CV.formattedData.add_format("genderCheck", create_gender_format);
+            CV.nodeLayout = layout_generations(CV.formattedData.get_hierarchy());
+            update_view(CV.nodeLayout);
         }
     }
 }]);
@@ -100,7 +109,7 @@ app.config(['$httpProvider', function ($httpProvider)
 /* Controllers - begin */
 
 // Body controller
-app.controller('bodyController', ['$scope', '$location', 'authService', 'tokenService', function ($scope, $location, authService, tokenService)
+app.controller('bodyController', ['$scope', '$location', 'authService', 'tokenService', 'colonyService', function ($scope, $location, authService, tokenService, colonyService)
 {
     // Attributes
     $scope.user = { username: '', password: '' };
@@ -145,6 +154,7 @@ app.controller('bodyController', ['$scope', '$location', 'authService', 'tokenSe
             console.log(tokenService.get());
             // This is in BodyController
             $scope.hideAuthForm();
+            $scope.getColonyList();
         })
         .error(function (data, status, headers, config)
         {
@@ -167,11 +177,9 @@ app.controller('bodyController', ['$scope', '$location', 'authService', 'tokenSe
             $scope.signup_message = 'Check failed';
         });
     };
-}]);
 
-// Colony controller
-app.controller('colonyController', ['$scope', 'colonyService', function ($scope, colonyService)
-{
+    //Colony Service Start
+
     $scope.colony_list = {};
     $scope.colony_data = {};
 
@@ -180,25 +188,16 @@ app.controller('colonyController', ['$scope', 'colonyService', function ($scope,
         colonyService.getColonyList()
         .success(function (data, status, headers, config)
         {
-            console.log(data);
             $scope.colony_list = data.colonylist;
         })
     }
 
     $scope.getColonyData = function (cid)
-{
-        console.log(cid);
+    {
         colonyService.getColonyData({ cid: cid })
         .success(function (data, status, headers, config)
         {
-            $scope.colony_data = JSON.parse(data.colonydata[0].data);
-            console.log($scope.colony_data);
-
-            //TODO
-            //$scope.initialize($scope.colony_data);
-
-            //TODO
-            //child_plot_link($scope, ['#graph']);
+            if (data.colonydata[0].data) colonyService.drawColony(data.colonydata[0].data);
         })
     }
 }]);

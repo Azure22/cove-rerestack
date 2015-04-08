@@ -23,6 +23,8 @@
   <script src="./lib/js/angular/cove.js"></script>
   <!-- Visualization -->
   <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+  <script src="./lib/js/colony/arrows.js" charset="utf-8"></script>
+  <script src="./lib/js/colony/colony_view.js" charset="utf-8"></script>
 </head>
 
 <body ng-controller="bodyController">
@@ -48,15 +50,20 @@
   </nav>
 
   <!-- Test placeholder-->
-  <div class="jumbotron" ng-controller="colonyController">
-    <button type="button" class="btn btn-default" ng-click="getColonyList()">Get List</button>
+  <div class="jumbotron">
+    <!--<button type="button" class="btn btn-default" ng-click="getColonyList()">Get List</button>-->
     <ul class="list-group">
       <li class="list-group-item" ng-repeat="c in colony_list">
         <span class="badge">{{c.control}}</span>
         {{c.cid}}
+        <button type="button" class="btn btn-default" ng-click="getColonyData(c.cid)">Show</button>
       </li>
     </ul>
   </div>
+
+  <div id="graph"></div>
+  <div id="mouseInfoDetails"></div>
+  <div id="mouseInfoLineage"></div>
 
   <!-- Login form -->
   <div id="auth-cover" style="display:{{auth_display}}">
