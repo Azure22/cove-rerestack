@@ -9,8 +9,9 @@ app.constant('AUTH_EVENTS', {
     loginFailed: 'auth-login-failed',
     logoutSuccess: 'auth-logout-success',
     sessionTimeout: 'auth-session-timeout',
-    notAuthenticated: 'auth-not-authenticated',
-    notAuthorized: 'auth-not-authorized'
+    Unauthenticated: 'auth-not-authenticated',
+    Unauthorized: 'auth-not-authorized',
+    Authorized: 'auth-authorized'
 });
 
 /* Constants - end */
@@ -68,34 +69,50 @@ app.factory('authService', ['$http', 'tokenService', 'AUTH_EVENTS', function ($h
 {
     return {
         // Param user: { username: xxx, password: xxx }
-        login: function (user)
+        login: function (user, auth_event)
         {
-            return $http.post('/api/login', user);
-
-            //$http.post('/api/login', user)
-            //.success(function (data, status, headers, config)
-            //{
-            //    // Get the response of post and store it in the session
-            //    tokenService.set(data.token);
-            //    return AUTH_EVENTS.loginSuccess;
-            //})
-            //.error(function (data, status, headers, config)
-            //{
-            //    // Erase the token if the user fails to log in
-            //    tokenService.destory();
-            //    return AUTH_EVENTS.loginFailed;
-            //});
+            $http.post('/api/login', user)
+            .then(function (response)
+            {
+                // Get the response of post and store it in the session
+                tokenService.set(response.data.token);
+                auth_event(response.data.message);
+            }
+            , function (response)
+            {
+                // Erase the token if the user fails to log in
+                tokenService.destory();
+                auth_event(response.data.message);
+            });
         },
 
-        logout: function ()
+        logout: function (auth_event)
         {
-            tokenService.destory();
-            return AUTH_EVENTS.logoutSuccess;
+            $http.get('/api/logout')
+            .then(function (response)
+            {
+                tokenService.destory();
+                auth_event(response.data.message);
+            }
+            , function (response)
+            {
+                tokenService.destory();
+                auth_event(response.data.message);
+            });
         },
 
-        verify: function ()
+        verify: function (auth_event)
         {
-            return $http.get('/api/verify');
+            $http.get('/api/verify')
+            .then(function (response)
+            {
+                tokenService.set(response.data.token);
+                auth_event(response.data.message);
+            }
+            , function (response)
+            {
+                auth_event(response.data.message);
+            });
         }
     }
 }]);
@@ -147,7 +164,7 @@ app.factory('tokenInterceptor', ['tokenService', function (tokenService)
 /* Controllers - begin */
 
 // Body controller
-app.controller('bodyController', ['$scope', '$location', 'authService', 'tokenService', 'colonyService', function ($scope, $location, authService, tokenService, colonyService)
+app.controller('bodyController', ['$scope', '$location', 'authService', 'AUTH_EVENTS', 'colonyService', function ($scope, $location, authService, AUTH_EVENTS, colonyService)
 {
     // Attributes
     $scope.user = { username: '', password: '' };
@@ -155,6 +172,7 @@ app.controller('bodyController', ['$scope', '$location', 'authService', 'tokenSe
     $scope.signin_message = '';
     $scope.signup_message = '';
 
+    // Methods
     $scope.showAuthForm = function ()
     {
         $scope.signin_message = '';
@@ -169,63 +187,48 @@ app.controller('bodyController', ['$scope', '$location', 'authService', 'tokenSe
         $scope.auth_display = 'none';
     };
 
-    $scope.init = function()
+    $scope.init = function ()
     {
-        if(tokenService.exist())
+        authService.verify(function (message)
         {
-            $scope.getColonyList();
-        }
-    }
-
-    $scope.logout = function ()
-    {
-        tokenService.destory();
-    };
-
-    // Methods
-    $scope.login = function ()
-    {
-        if (tokenService.get())
-        {
-            $scope.hideAuthForm();
-            return;
-        }
-
-        //switch(authService.login($scope.user))
-        //{
-
-        //}
-
-        authService.login($scope.user)
-        .success(function (data, status, headers, config)
-        {
-            // Get the response of post and store it in the session
-            tokenService.set(data.token);
-            $scope.signin_message = 'Welcome!';
-            console.log(tokenService.get());
-            // This is in BodyController
-            $scope.hideAuthForm();
-            $scope.getColonyList();
-        })
-        .error(function (data, status, headers, config)
-        {
-            // Erase the token if the user fails to log in
-            tokenService.destory();
-            $scope.signin_message = 'Error: Invalid user or password';
+            if (message == AUTH_EVENTS.Authorized) $scope.getColonyList();
+            else $scope.logout();
         });
     };
 
-    $scope.check = function ()
+    $scope.auth_events = function (result)
+    {
+        //console.log(result);
+        switch (result) {
+            case AUTH_EVENTS.loginSuccess:
+                $scope.hideAuthForm();
+                $scope.getColonyList();
+                break;
+            case AUTH_EVENTS.loginFailed:
+                $scope.signin_message = "username or password invalid";
+                break;
+            case AUTH_EVENTS.logoutSuccess:
+                $scope.showAuthForm();
+                break;
+        };
+    };
+
+    $scope.login = function ()
+    {
+        authService.login($scope.user, $scope.auth_events);
+    };
+
+    $scope.logout = function ()
+    {
+        authService.logout($scope.auth_events);
+    };
+
+    $scope.verify = function ()
     {
         // Post the token back to the server, in which it will be decoded
-        authService.verify()
-        .success(function (data, status, headers, config)
+        authService.verify(function (message)
         {
-            $scope.signup_message = 'Check result: ' + data.result;
-        })
-        .error(function (data, status, headers, config)
-        {
-            $scope.signup_message = 'Check failed';
+            $scope.signup_message = 'Check result: ' + message;
         });
     };
 

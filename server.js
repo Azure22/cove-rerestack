@@ -71,7 +71,7 @@ app.post('/api/login', function (req, res)
     var password = req.body.password
 
     if (!username || !password) {
-        return res.json(401, { err: 'username and password required' });
+        return res.json(401, { message: 'auth-login-failed' });//{ err: 'username and password required' });
     }
 
     doQuery(req, res, function (conn)
@@ -90,16 +90,22 @@ app.post('/api/login', function (req, res)
                     //Sign the profile into token using jwt
                     var token = jwt.sign(profile, secret, { expiresInMinutes: 60 * 5 });
                     //Send back to the browser
-                    res.json({ token: token });
+                    res.json(200, { message: 'auth-login-success', token: token });
                 }
                 else {
-                    res.send(401, 'invalid username or password');
+                    res.json(401, { message: 'auth-login-failed' });
                 }
             }
-            else
-                console.log(err);
+            else {
+                res.json(401, { message: 'auth-login-failed' });
+            }
         });
     });
+});
+
+app.get('/api/logout', function (req, res)
+{
+    res.json(200, { message: 'auth-logout-success' });
 });
 
 // Authentication verification
@@ -108,13 +114,27 @@ app.get('/api/verify', function (req, res)
     var token = req.headers.token;
     if (token)
     {
-        var decoded = jwt.verify(token, secret);
-        console.log(decoded);
-        res.json({ result: true });
+        try
+        {
+            var profile = jwt.verify(token, secret);
+            console.log(profile);
+            res.json(200, { message: 'auth-authorized', token: jwt.sign(profile, secret, { expiresInMinutes: 60 * 5 }) });
+        }
+        catch(e)
+        {
+            console.log(e);
+            switch(e.name)
+            {
+                case 'TokenExpiredError':
+                    res.json(440, { message: 'auth-session-timeout' });
+                default:
+                    res.json(401, { message: 'auth-not-authorized' });
+            }
+        }
     }
     else
     {
-        res.json({ result: false });
+        res.json(401, { message: 'auth-not-authorized' });
     }
 });
 
