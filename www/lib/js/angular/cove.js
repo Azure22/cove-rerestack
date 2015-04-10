@@ -9,7 +9,7 @@ app.constant('AUTH_EVENTS', {
     loginFailed: 'auth-login-failed',
     logoutSuccess: 'auth-logout-success',
     sessionTimeout: 'auth-session-timeout',
-    Unauthenticated: 'auth-not-authenticated',
+    //Unauthenticated: 'auth-not-authenticated',
     Unauthorized: 'auth-not-authorized',
     Authorized: 'auth-authorized'
 });
@@ -30,30 +30,47 @@ app.config(['$httpProvider', '$locationProvider', function ($httpProvider, $loca
 
 app.run(function ($rootScope)
 {
-    // pass
+    //pass
 });
 
 /* RootScope - end */
 
 /* Services - begin */
 
-// Colony Services
+//Colony Services
 app.factory('colonyService', ['$http', function ($http)
 {
     return {
 
-        getColonyList: function ()
+        getColonyList: function (callback)
         {
-            return $http.get('/api/colonylist');
+            $http.get('/api/colony/list')
+            .success(function (data, status, headers, config)
+            {
+                callback(data.colonylist);
+            })
+            .error(function (data, status, headers, config)
+            {
+                console.log("Error!");
+            });
         },
 
-        // Param colony: { cid: xxx }
-        getColonyData: function (colony)
+        //Param colony: { cid: xxx }
+        getColonyData: function (colony, callback)
         {
-            return $http.post('/api/colonydata', colony);
+            $http.post('/api/colony/data', colony)
+            .success(function (data, status, headers, config)
+            {
+                if (data.colonydata[0].data) callback(data.colonydata[0].data);
+                else console.log("Failed!");
+            })
+            .error(function (data, status, headers, config)
+            {
+                console.log("Error!");
+            });
         },
 
-        drawColony:function (data)
+        drawColony: function (data)
         {
             //console.log("!!");
             create_initial_view(initialize(data, "localhost"));
@@ -64,60 +81,60 @@ app.factory('colonyService', ['$http', function ($http)
     }
 }]);
 
-// Authentication Services
-app.factory('authService', ['$http', 'tokenService', 'AUTH_EVENTS', function ($http, tokenService, AUTH_EVENTS)
+//Authentication Services
+app.factory('authService', ['$http', 'tokenService', function ($http, tokenService)
 {
     return {
-        // Param user: { username: xxx, password: xxx }
-        login: function (user, auth_event)
+        //Param user: { username: xxx, password: xxx }
+        login: function (user, callback)
         {
             $http.post('/api/login', user)
-            .then(function (response)
+            .success(function (data, status, headers, config)
             {
-                // Get the response of post and store it in the session
-                tokenService.set(response.data.token);
-                auth_event(response.data.message);
-            }
-            , function (response)
+                //Get the response of post and store it in the session
+                tokenService.set(data.token);
+                callback(data.message);
+            })
+            .error(function (data, status, headers, config)
             {
-                // Erase the token if the user fails to log in
+                //Erase the token if the user fails to log in
                 tokenService.destory();
-                auth_event(response.data.message);
+                callback(data.message);
             });
         },
 
-        logout: function (auth_event)
+        logout: function (callback)
         {
             $http.get('/api/logout')
-            .then(function (response)
+            .success(function (data, status, headers, config)
             {
                 tokenService.destory();
-                auth_event(response.data.message);
-            }
-            , function (response)
+                callback(data.message);
+            })
+            .error(function (data, status, headers, config)
             {
                 tokenService.destory();
-                auth_event(response.data.message);
+                callback(data.message);
             });
         },
 
-        verify: function (auth_event)
+        verify: function (callback)
         {
             $http.get('/api/verify')
-            .then(function (response)
+            .success(function (data, status, headers, config)
             {
-                tokenService.set(response.data.token);
-                auth_event(response.data.message);
-            }
-            , function (response)
+                tokenService.set(data.token);
+                callback(data.message);
+            })
+            .error(function (data, status, headers, config)
             {
-                auth_event(response.data.message);
+                callback(data.message);
             });
         }
     }
 }]);
 
-// Token Services
+//Token Services
 app.factory('tokenService', ['$window', function ($window)
 {
     return {
@@ -144,8 +161,8 @@ app.factory('tokenService', ['$window', function ($window)
     }
 }]);
 
-// Token Interceptor
-// To insert token into request headers. Backend authentication is based on this.
+//Token Interceptor
+//To insert token into request headers. Backend authentication is based on this.
 app.factory('tokenInterceptor', ['tokenService', function (tokenService)
 {
     return {
@@ -163,16 +180,16 @@ app.factory('tokenInterceptor', ['tokenService', function (tokenService)
 
 /* Controllers - begin */
 
-// Body controller
+//Body controller
 app.controller('bodyController', ['$scope', '$location', 'authService', 'AUTH_EVENTS', 'colonyService', function ($scope, $location, authService, AUTH_EVENTS, colonyService)
 {
-    // Attributes
+    //Attributes
     $scope.user = { username: '', password: '' };
     $scope.auth_display = 'none';
     $scope.signin_message = '';
     $scope.signup_message = '';
 
-    // Methods
+    //Methods
     $scope.showAuthForm = function ()
     {
         $scope.signin_message = '';
@@ -225,7 +242,7 @@ app.controller('bodyController', ['$scope', '$location', 'authService', 'AUTH_EV
 
     $scope.verify = function ()
     {
-        // Post the token back to the server, in which it will be decoded
+        //Post the token back to the server, in which it will be decoded and verified
         authService.verify(function (message)
         {
             $scope.signup_message = 'Check result: ' + message;
@@ -239,20 +256,18 @@ app.controller('bodyController', ['$scope', '$location', 'authService', 'AUTH_EV
 
     $scope.getColonyList = function ()
     {
-        colonyService.getColonyList()
-        .success(function (data, status, headers, config)
+        colonyService.getColonyList(function (d)
         {
-            $scope.colony_list = data.colonylist;
-        })
+            $scope.colony_list = d;
+        });
     }
 
     $scope.getColonyData = function (cid)
     {
-        colonyService.getColonyData({ cid: cid })
-        .success(function (data, status, headers, config)
+        colonyService.getColonyData({ cid: cid }, function (d)
         {
-            if (data.colonydata[0].data) colonyService.drawColony(data.colonydata[0].data);
-        })
+            colonyService.drawColony(d);
+        });
     }
 
     //Init Page

@@ -3,7 +3,7 @@
     */
 
 // Containers for global data to be referenced explicitly.
-var VizOptions = {};
+var VizOptions = { colorBy: 'gender' };
 var ColonyViz = {}; //data for general colony view
 var LineageViz = {}; //data related to lineage tree
 
@@ -1143,11 +1143,10 @@ function create_initial_view(initNodes)
     d3.select("#doneGenotypeColor").on("click", handle_done_geno_color);
     d3.select("#submitSearch").on("click", handle_search);
 
-    // Use default color selection indicated by DOM dropdown element
-    //Instead of 
-    var colorOption = d3.select("#selectColorGroup").node();
+    // Use default color selection indicated by DOM dropdown element 
+    //var colorOption = d3.select("#selectColorGroup").node();
     //var colorBy = colorOption.options[colorOption.selectedIndex].value;
-    var colorBy = "gender";//xihan
+    var colorBy = VizOptions.colorBy;
     if (colorBy == "gender") { ColonyViz.color_fxn = assign_gender_color; }
     else if (colorBy == "genotype") { ColonyViz.color_fxn = assign_genotype_color; }
     else { ColonyViz.color_fxn = assign_gender_color; }
@@ -1469,9 +1468,9 @@ function update_view(nodeLayouts)
                 // Only execute once
                 ColonyViz.arrowReady = false;
             }
-            var colorOption = d3.select("#selectColorGroup").node();
+            //var colorOption = d3.select("#selectColorGroup").node();
             //var colorBy = colorOption.options[colorOption.selectedIndex].value;
-            var colorBy = "gender";
+            var colorBy = VizOptions.colorBy;
             var pieNode = d3.selectAll(".pie-" + nodeData.mouseId);
             if ((colorBy == "customGenotype") && !pieNode.empty()) {
                 pieNode.transition().delay(700 * Math.pow(i, 1.5)).duration(1400 * Math.pow(i, 1.5))

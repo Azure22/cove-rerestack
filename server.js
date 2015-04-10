@@ -64,6 +64,18 @@ app.listen(app.get('port'), function(){
 
 /* Api part - begin */
 
+//Verify Token
+function catchExecptions(e, res)
+{
+    console.log(e);
+    switch (e.name) {
+        case 'TokenExpiredError':
+            res.json(440, { message: 'auth-session-timeout' });
+        default:
+            res.json(401, { message: 'auth-not-authorized' });
+    }
+}
+
 // User login
 app.post('/api/login', function (req, res)
 {
@@ -112,50 +124,44 @@ app.get('/api/logout', function (req, res)
 app.get('/api/verify', function (req, res)
 {
     var token = req.headers.token;
-    if (token)
-    {
-        try
-        {
+    if (token) {
+        try {
             var profile = jwt.verify(token, secret);
             console.log(profile);
             res.json(200, { message: 'auth-authorized', token: jwt.sign(profile, secret, { expiresInMinutes: 60 * 5 }) });
         }
-        catch(e)
-        {
-            console.log(e);
-            switch(e.name)
-            {
-                case 'TokenExpiredError':
-                    res.json(440, { message: 'auth-session-timeout' });
-                default:
-                    res.json(401, { message: 'auth-not-authorized' });
-            }
+        catch (e) {
+            catchExecptions(e, res);
         }
     }
-    else
-    {
+    else {
         res.json(401, { message: 'auth-not-authorized' });
     }
 });
 
 // Get colony list
-app.get('/api/colonylist', function (req, res)
+app.get('/api/colony/list', function (req, res)
 {
     if (req.headers.token) {
-        var uid = jwt.verify(req.headers.token, secret).uid;
-        console.log(uid);
-        doQuery(req, res, function (conn)
-        {
-            var qstr = "SELECT cid, control FROM user_colonies WHERE uid = '" + uid + "'";
-            conn.query(qstr, function (err, row)
+        try{
+            var uid = jwt.verify(req.headers.token, secret).uid;
+            doQuery(req, res, function (conn)
             {
-                conn.release();
-                if (!err)
-                    res.json({ colonylist: row });
-                else
-                    console.log(err);
+                var qstr = "SELECT cid, control FROM user_colonies WHERE uid = '" + uid + "'";
+                conn.query(qstr, function (err, row)
+                {
+                    conn.release();
+                    if (!err)
+                        res.json({ colonylist: row });
+                    else
+                        console.log(err);
+                });
             });
-        });
+        }
+        catch(e)
+        {
+            catchExecptions(e, res);
+        }
     }
     else {
         res.send(401, 'unautherized');
@@ -163,7 +169,7 @@ app.get('/api/colonylist', function (req, res)
 });
 
 // Get colony data
-app.post('/api/colonydata', function (req, res)
+app.post('/api/colony/data', function (req, res)
 {
     if (req.headers.token) {
         // TODO

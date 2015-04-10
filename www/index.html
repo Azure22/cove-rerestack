@@ -85,7 +85,10 @@
             <label for="inputPassword" class="sr-only">Password</label>
             <input type="password" id="inputPassword" class="form-control" placeholder="Password" ng-model="user.password">
             <label class="auth-message">{{signin_message}}</label>
-            <button class="btn btn-lg btn-primary btn-block" type="submit" ng-click="login()">Sign in</button>
+            <p>
+              <button class="btn btn-primary btn-block" type="submit" ng-click="login()">Sign in</button>
+              <button class="btn btn-default btn-block" type="submit" ng-click="hideAuthForm()">Cancel</button>
+            </p>
           </form>
         </div>
         <div role="tabpanel" class="tab-pane" id="signup">
