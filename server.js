@@ -62,6 +62,8 @@ app.listen(app.get('port'), function(){
     app.get('port') + '; press Ctrl-C to terminate.' );
 });
 
+/* Api part - begin */
+
 // User login
 app.post('/api/login', function (req, res)
 {
@@ -101,7 +103,7 @@ app.post('/api/login', function (req, res)
 });
 
 // Authentication verification
-app.get('/api/check', function (req, res)
+app.get('/api/verify', function (req, res)
 {
     var token = req.headers.token;
     if (token)
@@ -164,3 +166,5 @@ app.post('/api/colonydata', function (req, res)
         res.send(401, 'unautherized');
     }
 });
+
+/* Api part - end */
