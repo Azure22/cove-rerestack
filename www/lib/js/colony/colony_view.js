@@ -3,8 +3,9 @@
     */
 
 // Containers for global data to be referenced explicitly.
-var CV = {}; //data for general colony view
-var IV = {}; //data related to lineage tree
+var VizOptions = {};
+var ColonyViz = {}; //data for general colony view
+var LineageViz = {}; //data related to lineage tree
 
 // Allow function currying - copied from "Javascript: The Good Parts" by Crockford
 Function.prototype.curry = function ()
@@ -29,7 +30,7 @@ function is_empty(obj)
     return true;
 }
 
-// Assign values to the CV.fit_scale function and CV.genFoci positions
+// Assign values to the ColonyViz.fit_scale function and ColonyViz.genFoci positions
 function set_scale_foci(nodeLayouts)
 {
     // Determine the horizontal spacing for each generation based on root node radius.
@@ -37,7 +38,7 @@ function set_scale_foci(nodeLayouts)
         var currGen = nodeLayouts[i];
         for (var j = 0; j < currGen.length; j++) {
             if (currGen[j].depth == 0) {
-                CV.genFoci[i] = {
+                ColonyViz.genFoci[i] = {
                     'radius': currGen[j].r,
                     'x': currGen[j].x,
                     'y': currGen[j].y
@@ -49,29 +50,29 @@ function set_scale_foci(nodeLayouts)
 
     var genPadding = 25;
     // Add diameter of each generation to scale width.
-    var totSpan = CV.genFoci.reduce(function (prev, curr, i, array)
+    var totSpan = ColonyViz.genFoci.reduce(function (prev, curr, i, array)
     {
         return prev + curr.radius * 2;
     }, 0)
     totSpan = totSpan + (genPadding * (nodeLayouts.length - 1));
     // Get max radius to scale the height.
-    var maxRadius = CV.genFoci.reduce(function (prev, curr, i, array)
+    var maxRadius = ColonyViz.genFoci.reduce(function (prev, curr, i, array)
     {
         return (prev < curr.radius) ? curr.radius : prev;
     }, 0)
 
     // Create scale function
-    var x_scale = d3.scale.linear().domain([0, totSpan]).range([0, CV.width]);
-    var y_scale = d3.scale.linear().domain([0, maxRadius * 2]).range([0, CV.height]);
-    CV.fit_scale = (x_scale(maxRadius) < y_scale(maxRadius)) ? x_scale : y_scale;
+    var x_scale = d3.scale.linear().domain([0, totSpan]).range([0, ColonyViz.width]);
+    var y_scale = d3.scale.linear().domain([0, maxRadius * 2]).range([0, ColonyViz.height]);
+    ColonyViz.fit_scale = (x_scale(maxRadius) < y_scale(maxRadius)) ? x_scale : y_scale;
 
     // Assign foci values
     var runningSum = 0; // Keep track of offset from left of graph
-    for (var i = 0; i < CV.genFoci.length; i++) {
-        var scaledRadius = CV.fit_scale(CV.genFoci[i].radius);
-        CV.genFoci[i].radius = scaledRadius;
-        CV.genFoci[i]['dx'] = runningSum + scaledRadius - CV.genFoci[i].x;
-        CV.genFoci[i]['dy'] = 0;
+    for (var i = 0; i < ColonyViz.genFoci.length; i++) {
+        var scaledRadius = ColonyViz.fit_scale(ColonyViz.genFoci[i].radius);
+        ColonyViz.genFoci[i].radius = scaledRadius;
+        ColonyViz.genFoci[i]['dx'] = runningSum + scaledRadius - ColonyViz.genFoci[i].x;
+        ColonyViz.genFoci[i]['dy'] = 0;
         runningSum = runningSum + genPadding + (scaledRadius * 2);
     }
 
@@ -89,18 +90,18 @@ function mice_data_format(data)
 
 function initialize(miceData, currDomain)
 {
-    CV.allMice = JSON.parse(miceData);
+    ColonyViz.allMice = JSON.parse(miceData);
     //The allMice object is an array of arrays for generation data, and element a json object.
     //Convert to format for hierarchical packing (1 level for all objects of a generation).
     //Use separate layout for each generation.
-    CV.miceGenData = mice_data_format(CV.allMice);
+    ColonyViz.miceGenData = mice_data_format(ColonyViz.allMice);
 
     // Mice data format needs to support additional hierarchy such as by gender and litter.
     // Create an object that stores fxns that need to be applied to the original raw data
     // to achieve the filtering and grouping specified by user.
-    CV.formattedData =
+    ColonyViz.formattedData =
         { // format_fxns are functions that take one parameter - array of raw data objects
-            'filteredHierarchy': mice_data_format(CV.allMice),
+            'filteredHierarchy': mice_data_format(ColonyViz.allMice),
             // format fxns add an additional level of grouping to leaf nodes
             'format_fxns': [],
             // filter functions take one parameter - a node to test
@@ -159,7 +160,7 @@ function initialize(miceData, currDomain)
                 // Attach the id as an attribute belonging to the fmt function object
                 filterFxn.id = id;
                 this.filter_fxns.push(filterFxn);
-                //this.filteredHierarchy = mice_data_format( CV.allMice);
+                //this.filteredHierarchy = mice_data_format( ColonyViz.allMice);
                 // Apply additional filter
                 // Filters designate what *can* be displayed.
                 // Filter members of each generation
@@ -170,7 +171,7 @@ function initialize(miceData, currDomain)
             'remove_filter': function (id)
             {
                 this.filter_fxns = this.filter_fxns.filter(function (elem) { return elem.id != id; });
-                this.filteredHierarchy = mice_data_format(CV.allMice);
+                this.filteredHierarchy = mice_data_format(ColonyViz.allMice);
                 // Re-Apply remaining filters
                 for (var fi = 0; fi < this.filter_fxns.length; fi++) {
                     // Filter members of each generation
@@ -181,46 +182,46 @@ function initialize(miceData, currDomain)
             }
         };
 
-    CV.active_genotype_filters = [];
-    CV.disabled_genotype_filters = [];
-    CV.size_by = function () { return 1; }
+    ColonyViz.active_genotype_filters = [];
+    ColonyViz.disabled_genotype_filters = [];
+    ColonyViz.size_by = function () { return 1; }
 
-    CV.width = 950,
-    CV.height = 560;
-    CV.infoHeight = 150;
-    CV.infoWidth = 350;
-    CV.infoXpos = 0;
-    CV.infoYpos = 30;
+    ColonyViz.width = 950,
+    ColonyViz.height = 560;
+    ColonyViz.infoHeight = 150;
+    ColonyViz.infoWidth = 350;
+    ColonyViz.infoXpos = 0;
+    ColonyViz.infoYpos = 30;
 
-    CV.href_individual = function (val)
+    ColonyViz.href_individual = function (val)
     {
         return "http://" + currDomain + "/viz/lineage_view/?mouseId=" + val;
     };
 
     // Initialization for lineage tree
-    IV.width = CV.infoWidth;
-    IV.height = CV.height - CV.infoHeight - CV.infoYpos - 20;
-    IV.childBlock = IV.height / 4;
-    IV.tree = d3.layout.tree()
-        .size([IV.width - 20, IV.height - IV.childBlock - 70]);
+    LineageViz.width = ColonyViz.infoWidth;
+    LineageViz.height = ColonyViz.height - ColonyViz.infoHeight - ColonyViz.infoYpos - 20;
+    LineageViz.childBlock = LineageViz.height / 4;
+    LineageViz.tree = d3.layout.tree()
+        .size([LineageViz.width - 20, LineageViz.height - LineageViz.childBlock - 70]);
 
-    IV.diagonal = d3.svg.diagonal()
+    LineageViz.diagonal = d3.svg.diagonal()
     .projection(function (d) { return [d.y, d.x]; });
 
-    CV.genFoci = [];
+    ColonyViz.genFoci = [];
     // Estimate boundary circle of each generation to assign layout size
-    for (var i = 0; i < CV.allMice.length; i++) {
+    for (var i = 0; i < ColonyViz.allMice.length; i++) {
         // Calculate circle size based on number of nodes
-        var totalArea = 64 * CV.allMice[i].length;
-        CV.genFoci[i] = { "estimate": Math.sqrt(totalArea) };
+        var totalArea = 64 * ColonyViz.allMice[i].length;
+        ColonyViz.genFoci[i] = { "estimate": Math.sqrt(totalArea) };
     }
 
     // Use the circle packing layout to calculate node positions for each generation.
     var nodeLayouts = [];
-    for (var i = 0; i < CV.miceGenData.length; i++) {
-        nodeLayouts.push(d3.layout.pack().size([CV.genFoci[i].estimate * 2, CV.height]).padding(10)
-                .value(CV.size_by)
-                .nodes(CV.miceGenData[i]));
+    for (var i = 0; i < ColonyViz.miceGenData.length; i++) {
+        nodeLayouts.push(d3.layout.pack().size([ColonyViz.genFoci[i].estimate * 2, ColonyViz.height]).padding(10)
+                .value(ColonyViz.size_by)
+                .nodes(ColonyViz.miceGenData[i]));
     }
 
     set_scale_foci(nodeLayouts);
@@ -255,7 +256,7 @@ function handle_color()
         // Multi color nodes should be overlaid with pie charts, so color doesn't matter.
         d3.selectAll(".node").style("fill", function (d)
         {
-            return typeof d.colorGrp == "undefined" ? "rgba(255,255,255,0)" : CV.custom_color_scale(d.colorGrp[0]);
+            return typeof d.colorGrp == "undefined" ? "rgba(255,255,255,0)" : ColonyViz.custom_color_scale(d.colorGrp[0]);
         });
     }
 }
@@ -264,7 +265,7 @@ function handle_size()
 {
     // Assign a function based on value from selector, and parameter is __data__ obj
     var selVal = this.value;
-    CV.size_by = function (d)
+    ColonyViz.size_by = function (d)
     {
         if (selVal == "uniform") {
             return 1;
@@ -274,10 +275,10 @@ function handle_size()
         }
         else return 1;
     }
-    CV.nodeLayout = layout_generations(CV.formattedData.get_hierarchy());
-    update_view(CV.nodeLayout);
-    //var lines = find_endpoints( CV.nodeLayout, CV.genFoci);
-    //draw_arrows( CV.svg, lines, AR.line_generator);
+    ColonyViz.nodeLayout = layout_generations(ColonyViz.formattedData.get_hierarchy());
+    update_view(ColonyViz.nodeLayout);
+    //var lines = find_endpoints( ColonyViz.nodeLayout, ColonyViz.genFoci);
+    //draw_arrows( ColonyViz.svg, lines, AR.line_generator);
 }
 
 function assign_gender_color(d)
@@ -291,7 +292,7 @@ function assign_gender_color(d)
     else return "#C0C0C0";
 }
 
-CV.genotype_color_scale = d3.scale.category20();
+ColonyViz.genotype_color_scale = d3.scale.category20();
 
 // This function is meant to be curried, since the selections should not have to be looked up
 // for every node that this function is called for.
@@ -299,15 +300,15 @@ function assign_genotype_color(d)
 {
     // Each genotype is assigned a mapping to a color
     var gId = d.genotype1 + d.genotype2 + d.genotype3;
-    return CV.genotype_color_scale(gId);
+    return ColonyViz.genotype_color_scale(gId);
 }
 
-CV.custom_color_scale = d3.scale.category20();
+ColonyViz.custom_color_scale = d3.scale.category20();
 
-CV.arc = d3.svg.arc()
+ColonyViz.arc = d3.svg.arc()
         .innerRadius(0);
 
-CV.pie = d3.layout.pie()
+ColonyViz.pie = d3.layout.pie()
         .value(function (d) { return 1; });
 
 // Draw a pie chart representing the different color groups a node is a part of
@@ -317,23 +318,23 @@ function create_pie_node(thisNode)
     var nodeData = thisNode.datum();
     // Make the size of the pie the same as node it is replacing
     var radius = thisNode.attr("r");
-    CV.arc.outerRadius(radius);
+    ColonyViz.arc.outerRadius(radius);
     // Get position to translate pie
     var xpos = thisNode.attr("cx");
     var ypos = thisNode.attr("cy");
 
     // create new pie based on mouseId; separate g for each segment of pie
-    //var pieSel = CV.svg.select("#g" +nodeData.generation)
+    //var pieSel = ColonyViz.svg.select("#g" +nodeData.generation)
     //    .selectAll(".pie-" + nodeData.mouseId);
-    var pieSel = CV.svg.select("#g" + nodeData.generation)
-        .selectAll(".pie-" + nodeData.mouseId).data(CV.pie(nodeData.colorGrp),
+    var pieSel = ColonyViz.svg.select("#g" + nodeData.generation)
+        .selectAll(".pie-" + nodeData.mouseId).data(ColonyViz.pie(nodeData.colorGrp),
             function (d) { return d.data; });
     //if ( !pieSel.empty()) {
     //    pieSel.attr("transform", "translate(" + xpos + "," + ypos + ")");
     //    pieSel.selectAll("path").remove();
     //}
     // add new pie segments
-    //pieSel.data( CV.pie( nodeData.colorGrp)).enter()
+    //pieSel.data( ColonyViz.pie( nodeData.colorGrp)).enter()
     pieSel.enter()
         .append("g")
             .attr("class", "pie-" + nodeData.mouseId)
@@ -341,20 +342,20 @@ function create_pie_node(thisNode)
             .classed("pie-arc", true)
             .attr("transform", "translate(" + xpos + "," + ypos + ")")
             .append("path")
-                .attr("d", CV.arc)
+                .attr("d", ColonyViz.arc)
                 .style("fill", function (d, i)
                 {
-                    return CV.custom_color_scale(d.data);
+                    return ColonyViz.custom_color_scale(d.data);
                 });
     // change existing pie segments
     //pieSel.append("path")
     //pieSel.attr("transform", "translate(" + xpos + "," + ypos + ")");
     pieSel.select("path")
         // updated data bound to parent selection is passed to the arc fxn implicitly
-        .attr("d", CV.arc)
+        .attr("d", ColonyViz.arc)
         .style("fill", function (d)
         {
-            return CV.custom_color_scale(d.data);
+            return ColonyViz.custom_color_scale(d.data);
         });
 
 }
@@ -365,13 +366,13 @@ function update_pie_node(pieNode, nodeData)
 
     // Make the size of the pie the same as node it is replacing
     var radius = nodeData.r;
-    CV.arc.outerRadius(radius);
+    ColonyViz.arc.outerRadius(radius);
     pieNode.attr("transform", "translate(" + nodeData.x + "," + nodeData.y + ")")
-        .attr("d", CV.arc)
+        .attr("d", ColonyViz.arc)
 }
 
-CV.colorLegendWidth = 20;
-CV.colorLegendHeight = 20;
+ColonyViz.colorLegendWidth = 20;
+ColonyViz.colorLegendHeight = 20;
 
 // Callback when a new custom color is added
 function handle_done_geno_color()
@@ -393,7 +394,7 @@ function handle_done_geno_color()
         }
     }
     // A selection string is mapped to a color randomly
-    var colorAssigned = CV.custom_color_scale(doneSelection);
+    var colorAssigned = ColonyViz.custom_color_scale(doneSelection);
     // Create new filter entry in the menu
     var doneSel = d3.select("#userColors").append("tr");
     /*
@@ -404,13 +405,13 @@ function handle_done_geno_color()
         .property("checked","true");
         */
     doneSel.append("td").append("svg")
-        .attr("width", CV.colorLegendWidth)
-        .attr("height", CV.colorLegendHeight)
+        .attr("width", ColonyViz.colorLegendWidth)
+        .attr("height", ColonyViz.colorLegendHeight)
         .append("circle")
             .datum(doneSelection)
-            .attr("cx", CV.colorLegendWidth / 2)
-            .attr("cy", CV.colorLegendHeight / 2)
-            .attr("r", (CV.colorLegendHeight / 2) - 1)
+            .attr("cx", ColonyViz.colorLegendWidth / 2)
+            .attr("cy", ColonyViz.colorLegendHeight / 2)
+            .attr("r", (ColonyViz.colorLegendHeight / 2) - 1)
             .classed("userAddedColor", true)
             .style("stroke", "rgb(150,150,150)")
             .style("stroke-width", "1.0px")
@@ -482,54 +483,54 @@ function handle_gene_color()
 function handle_group_gender()
 {
     if (this.checked == true) {
-        CV.formattedData.add_format("genderCheck", create_gender_format);
+        ColonyViz.formattedData.add_format("genderCheck", create_gender_format);
     }
     else {
-        CV.formattedData.remove_format("genderCheck");
+        ColonyViz.formattedData.remove_format("genderCheck");
     }
-    CV.nodeLayout = layout_generations(CV.formattedData.get_hierarchy());
-    update_view(CV.nodeLayout);
-    //var lines = find_endpoints( CV.nodeLayout, CV.genFoci);
-    //draw_arrows( CV.svg, lines, AR.line_generator);
+    ColonyViz.nodeLayout = layout_generations(ColonyViz.formattedData.get_hierarchy());
+    update_view(ColonyViz.nodeLayout);
+    //var lines = find_endpoints( ColonyViz.nodeLayout, ColonyViz.genFoci);
+    //draw_arrows( ColonyViz.svg, lines, AR.line_generator);
 }
 
 // Callback when user clicks on checkbox to group by litter
 function handle_group_litter()
 {
     if (this.checked == true) {
-        CV.formattedData.add_format("litterCheck", create_litter_format);
+        ColonyViz.formattedData.add_format("litterCheck", create_litter_format);
     }
     else {
-        CV.formattedData.remove_format("litterCheck");
+        ColonyViz.formattedData.remove_format("litterCheck");
     }
-    CV.nodeLayout = layout_generations(CV.formattedData.get_hierarchy());
-    update_view(CV.nodeLayout);
-    //var lines = find_endpoints( CV.nodeLayout, CV.genFoci);
-    //draw_arrows( CV.svg, lines, AR.line_generator);
+    ColonyViz.nodeLayout = layout_generations(ColonyViz.formattedData.get_hierarchy());
+    update_view(ColonyViz.nodeLayout);
+    //var lines = find_endpoints( ColonyViz.nodeLayout, ColonyViz.genFoci);
+    //draw_arrows( ColonyViz.svg, lines, AR.line_generator);
 }
 
 // Callback when user clicks on checkbox to group by genotype
 function handle_group_gene()
 {
     if (this.checked == true) {
-        CV.formattedData.add_format("geneCheck", create_gene_format);
+        ColonyViz.formattedData.add_format("geneCheck", create_gene_format);
     }
     else {
-        CV.formattedData.remove_format("geneCheck");
+        ColonyViz.formattedData.remove_format("geneCheck");
     }
-    CV.nodeLayout = layout_generations(CV.formattedData.get_hierarchy());
-    update_view(CV.nodeLayout);
-    //var lines = find_endpoints( CV.nodeLayout, CV.genFoci);
-    //draw_arrows( CV.svg, lines, AR.line_generator);
+    ColonyViz.nodeLayout = layout_generations(ColonyViz.formattedData.get_hierarchy());
+    update_view(ColonyViz.nodeLayout);
+    //var lines = find_endpoints( ColonyViz.nodeLayout, ColonyViz.genFoci);
+    //draw_arrows( ColonyViz.svg, lines, AR.line_generator);
 }
 
 // Callback when gender filter is clicked
 function handle_filter_gender()
 {
     // Remove any previous filter for gender because user is changing filter value
-    CV.formattedData.remove_filter("filterGender");
+    ColonyViz.formattedData.remove_filter("filterGender");
     if ((this.checked == true) && (this.value != 'All')) {
-        CV.formattedData.add_filter("filterGender", perform_filter.curry(this.name, this.value));
+        ColonyViz.formattedData.add_filter("filterGender", perform_filter.curry(this.name, this.value));
     }
     // The 'this' context here is for element clicked.
     /* Following old code for checkbox instead of radio buttons
@@ -549,11 +550,11 @@ function handle_filter_gender()
     */
 
     // Re-draw
-    CV.nodeLayout = layout_generations(CV.formattedData.get_hierarchy());
-    update_view(CV.nodeLayout);
+    ColonyViz.nodeLayout = layout_generations(ColonyViz.formattedData.get_hierarchy());
+    update_view(ColonyViz.nodeLayout);
     //update_color();
-    //var lines = find_endpoints( CV.nodeLayout, CV.genFoci);
-    //draw_arrows( CV.svg, lines, AR.line_generator);
+    //var lines = find_endpoints( ColonyViz.nodeLayout, ColonyViz.genFoci);
+    //draw_arrows( ColonyViz.svg, lines, AR.line_generator);
 }
 
 function handle_filter_age()
@@ -562,10 +563,10 @@ function handle_filter_age()
         d3.select("#dobSelector").style("display", "none")
         d3.select("#ageSelector").style("display", "none")
         // Remove any previous filter
-        CV.formattedData.remove_filter("filterAgeRange");
-        CV.formattedData.remove_filter("filterDOB");
-        CV.nodeLayout = layout_generations(CV.formattedData.get_hierarchy());
-        update_view(CV.nodeLayout);
+        ColonyViz.formattedData.remove_filter("filterAgeRange");
+        ColonyViz.formattedData.remove_filter("filterDOB");
+        ColonyViz.nodeLayout = layout_generations(ColonyViz.formattedData.get_hierarchy());
+        update_view(ColonyViz.nodeLayout);
     }
     else if (this.value === "Date") {
         d3.select("#dobSelector").style("display", "inline")
@@ -580,22 +581,22 @@ function handle_filter_age()
 function handle_filter_dob()
 {
     // Remove any previous filter
-    CV.formattedData.remove_filter("filterDOB");
-    CV.formattedData.remove_filter("filterAgeRange");
+    ColonyViz.formattedData.remove_filter("filterDOB");
+    ColonyViz.formattedData.remove_filter("filterAgeRange");
     var start = parseInt(d3.select("#dateStart").property("value").replace(/-/g, ""));
     var end = parseInt(d3.select("#dateEnd").property("value").replace(/-/g, ""));
-    CV.formattedData.add_filter("filterDOB",
+    ColonyViz.formattedData.add_filter("filterDOB",
             perform_filter_range.curry("dob", start, end));
     // Re-draw
-    CV.nodeLayout = layout_generations(CV.formattedData.get_hierarchy());
-    update_view(CV.nodeLayout);
+    ColonyViz.nodeLayout = layout_generations(ColonyViz.formattedData.get_hierarchy());
+    update_view(ColonyViz.nodeLayout);
 }
 
 function handle_filter_age_range()
 {
     // Remove any previous filter
-    CV.formattedData.remove_filter("filterAgeRange");
-    CV.formattedData.remove_filter("filterDOB");
+    ColonyViz.formattedData.remove_filter("filterAgeRange");
+    ColonyViz.formattedData.remove_filter("filterDOB");
     var start = parseInt(d3.select("#ageStart").property("value"));
     var end = parseInt(d3.select("#ageEnd").property("value"));
     // Convert age to a date
@@ -614,11 +615,11 @@ function handle_filter_age_range()
     earliestMonth = earliestMonth > 9 ? "" + earliestMonth : "0" + earliestMonth;
     var earliestDay = earliestDate.getDate();
     earliestDay = earliestDay > 9 ? "" + earliestDay : "0" + earliestDay;
-    CV.formattedData.add_filter("filterAgeRange",
+    ColonyViz.formattedData.add_filter("filterAgeRange",
             perform_filter_range.curry("dob", parseInt(earliestYear + earliestMonth + earliestDay), parseInt(latestYear + latestMonth + latestDay)));
     // Re-draw
-    CV.nodeLayout = layout_generations(CV.formattedData.get_hierarchy());
-    update_view(CV.nodeLayout);
+    ColonyViz.nodeLayout = layout_generations(ColonyViz.formattedData.get_hierarchy());
+    update_view(ColonyViz.nodeLayout);
 }
 
 function handle_add_geno_filter()
@@ -673,16 +674,16 @@ function handle_done_geno_filter()
     // exist such as gene1, gene2 ... with values such as LEF1 ...
     // and also fields for genotype1, genotype2 ... with values such as +/-
     add_genotype_filter(doneSelection, check_grp.curry(selections));
-    CV.formattedData.remove_filter("genotypeFilter");
-    CV.formattedData.add_filter("genotypeFilter", perform_filter_set);
+    ColonyViz.formattedData.remove_filter("genotypeFilter");
+    ColonyViz.formattedData.add_filter("genotypeFilter", perform_filter_set);
 
     // Re-draw
-    CV.nodeLayout = layout_generations(CV.formattedData.get_hierarchy());
-    update_view(CV.nodeLayout);
+    ColonyViz.nodeLayout = layout_generations(ColonyViz.formattedData.get_hierarchy());
+    update_view(ColonyViz.nodeLayout);
     //update_color();
-    //var lines = find_endpoints( CV.nodeLayout, CV.genFoci);
-    //draw_arrows( CV.svg, lines, AR.line_generator);
-    //setTimeout( function() { draw_arrows( CV.svg, lines, AR.line_generator);}, 5000);
+    //var lines = find_endpoints( ColonyViz.nodeLayout, ColonyViz.genFoci);
+    //draw_arrows( ColonyViz.svg, lines, AR.line_generator);
+    //setTimeout( function() { draw_arrows( ColonyViz.svg, lines, AR.line_generator);}, 5000);
 }
 
 function handle_all_geno_filter()
@@ -691,17 +692,17 @@ function handle_all_geno_filter()
     this.disabled = true;
     d3.selectAll(".userAddedFilter")
         .property("checked", false);
-    for (var fi = 0; fi < CV.active_genotype_filters.length; fi++) {
-        CV.disabled_genotype_filters.push(CV.active_genotype_filters[fi]);
+    for (var fi = 0; fi < ColonyViz.active_genotype_filters.length; fi++) {
+        ColonyViz.disabled_genotype_filters.push(ColonyViz.active_genotype_filters[fi]);
     }
-    CV.active_genotype_filters = [];
-    CV.formattedData.remove_filter("genotypeFilter");
+    ColonyViz.active_genotype_filters = [];
+    ColonyViz.formattedData.remove_filter("genotypeFilter");
     // Re-draw
-    CV.nodeLayout = layout_generations(CV.formattedData.get_hierarchy());
-    update_view(CV.nodeLayout);
+    ColonyViz.nodeLayout = layout_generations(ColonyViz.formattedData.get_hierarchy());
+    update_view(ColonyViz.nodeLayout);
     //update_color();
-    //var lines = find_endpoints( CV.nodeLayout, CV.genFoci);
-    //draw_arrows( CV.svg, lines, AR.line_generator);
+    //var lines = find_endpoints( ColonyViz.nodeLayout, ColonyViz.genFoci);
+    //draw_arrows( ColonyViz.svg, lines, AR.line_generator);
 }
 
 function handle_user_filter()
@@ -715,29 +716,29 @@ function handle_user_filter()
             .attr("disabled", null)
             .property("checked", false);
         restore_genotype_filter(this.name);
-        CV.formattedData.remove_filter("genotypeFilter");
-        CV.formattedData.add_filter("genotypeFilter", perform_filter_set);
+        ColonyViz.formattedData.remove_filter("genotypeFilter");
+        ColonyViz.formattedData.add_filter("genotypeFilter", perform_filter_set);
     }
     else {
         remove_genotype_filter(this.name);
         // When filter is unchecked, and no other filters are checked
         // then the 'All' option should be auto checked.
-        CV.formattedData.remove_filter("genotypeFilter");
-        if (CV.active_genotype_filters.length == 0) {
+        ColonyViz.formattedData.remove_filter("genotypeFilter");
+        if (ColonyViz.active_genotype_filters.length == 0) {
             d3.select("#allGeno")
                 .attr("disabled", true)
                 .property("checked", true);
         }
         else {
-            CV.formattedData.add_filter("genotypeFilter", perform_filter_set);
+            ColonyViz.formattedData.add_filter("genotypeFilter", perform_filter_set);
         }
     }
     // Re-draw
-    CV.nodeLayout = layout_generations(CV.formattedData.get_hierarchy());
-    update_view(CV.nodeLayout);
+    ColonyViz.nodeLayout = layout_generations(ColonyViz.formattedData.get_hierarchy());
+    update_view(ColonyViz.nodeLayout);
     //update_color();
-    //var lines = find_endpoints( CV.nodeLayout, CV.genFoci);
-    //draw_arrows( CV.svg, lines, AR.line_generator);
+    //var lines = find_endpoints( ColonyViz.nodeLayout, ColonyViz.genFoci);
+    //draw_arrows( ColonyViz.svg, lines, AR.line_generator);
 }
 
 // referenced http://bl.ocks.org/sjengle/5432385
@@ -767,7 +768,7 @@ function add_tooltip(thisNode, tclass)
     if (xpos < 25) {
         tooltip.attr("text-anchor", "start");
     }
-    else if (xpos > CV.width - CV.infoWidth) {
+    else if (xpos > ColonyViz.width - ColonyViz.infoWidth) {
         tooltip.attr("text-anchor", "end");
         adjustment = bbox.width;
     }
@@ -789,19 +790,19 @@ function add_tooltip(thisNode, tclass)
 
 function handle_hover_info(thisNode, tclass)
 {
-    var xpos = CV.infoXpos;
-    var ypos = CV.infoYpos;
-    if (typeof CV.infoText == 'undefined') {
+    var xpos = ColonyViz.infoXpos;
+    var ypos = ColonyViz.infoYpos;
+    if (typeof ColonyViz.infoText == 'undefined') {
         d3.select("#mouseDetails")
             .append("rect")
-            .attr("height", CV.infoHeight)
-            .attr("width", CV.infoWidth)
+            .attr("height", ColonyViz.infoHeight)
+            .attr("width", ColonyViz.infoWidth)
             .attr("x", xpos)
             .attr("y", ypos)
             .attr("rx", 10)
             .attr("ry", 10)
             .style("fill", "rgba(250,241,133,0.6");
-        CV.infoText = d3.select("#mouseDetails")
+        ColonyViz.infoText = d3.select("#mouseDetails")
             .append("text")
             .text(" ")
             .attr("x", xpos)
@@ -812,89 +813,89 @@ function handle_hover_info(thisNode, tclass)
     if (d3.select("#lineageGraph rect").empty()) {
         var graph = d3.select("#lineageGraph");
         graph.append("rect")
-            .attr("height", IV.height + IV.childBlock)
-            .attr("width", IV.width)
-            .attr("x", CV.infoXpos)
-            .attr("y", CV.infoYpos)
+            .attr("height", LineageViz.height + LineageViz.childBlock)
+            .attr("width", LineageViz.width)
+            .attr("x", ColonyViz.infoXpos)
+            .attr("y", ColonyViz.infoYpos)
             .attr("rx", 10)
             .attr("ry", 10)
             .style("stroke", "rgba(100,100,100, 0.6)")
             .style("fill", "rgba(255,255,255,0.6)");
-        var transX = IV.width / 2 - IV.height / 2 - 30;
-        var transY = IV.height / 2 - IV.width / 2 - IV.childBlock;
-        IV.svg = graph.append("g")
+        var transX = LineageViz.width / 2 - LineageViz.height / 2 - 30;
+        var transY = LineageViz.height / 2 - LineageViz.width / 2 - LineageViz.childBlock;
+        LineageViz.svg = graph.append("g")
             .attr("id", "plot")
             // default tree expands from left to right
             // flip to expand from bottom to top
             // the initial coordinates of the nodes are determined by
-            // the generator IV.tree.nodes
-            .attr("transform", "translate(" + transX + "," + transY + ") rotate(-90 " + (IV.height / 2) + " " + (IV.width / 2) + ")");
-        IV.infoText = graph
+            // the generator LineageViz.tree.nodes
+            .attr("transform", "translate(" + transX + "," + transY + ") rotate(-90 " + (LineageViz.height / 2) + " " + (LineageViz.width / 2) + ")");
+        LineageViz.infoText = graph
             .append("text")
             .text("Click on mouse to display lineage tree")
             .style("font-style", "italic")
-            .attr("x", CV.infoXpos)
-            .attr("y", CV.infoYpos - 5);
-        IV.svgChildNodes = graph.append("g")
+            .attr("x", ColonyViz.infoXpos)
+            .attr("y", ColonyViz.infoYpos - 5);
+        LineageViz.svgChildNodes = graph.append("g")
             .attr("id", "childrenPlot");
-        IV.childInfoText = IV.svgChildNodes
+        LineageViz.childInfoText = LineageViz.svgChildNodes
             .append("text")
             .text(" ")
-            .attr("x", CV.infoXpos)
-            .attr("y", CV.infoYpos + IV.height - IV.childBlock);
+            .attr("x", ColonyViz.infoXpos)
+            .attr("y", ColonyViz.infoYpos + LineageViz.height - LineageViz.childBlock);
     }
     d3.selectAll("." + tclass).remove();
     add_tooltip(thisNode, tclass);
 
     //Update details shown
-    CV.infoText.text("Details of mouse " + thisNode.datum().mouseId);
-    var xpos = CV.infoXpos;
-    var ypos = CV.infoYpos;
+    ColonyViz.infoText.text("Details of mouse " + thisNode.datum().mouseId);
+    var xpos = ColonyViz.infoXpos;
+    var ypos = ColonyViz.infoYpos;
     ypos += 20;
-    CV.infoText.append("tspan").text("Generation: " + thisNode.datum().generation)
+    ColonyViz.infoText.append("tspan").text("Generation: " + thisNode.datum().generation)
             .attr("x", xpos).attr("y", ypos);
     ypos += 20;
-    CV.infoText.append("tspan").text("Father ID: " + thisNode.datum().fatherId)
+    ColonyViz.infoText.append("tspan").text("Father ID: " + thisNode.datum().fatherId)
             .attr("x", xpos).attr("y", ypos);
     ypos += 20;
-    CV.infoText.append("tspan").text("Mother ID: " + thisNode.datum().motherId)
+    ColonyViz.infoText.append("tspan").text("Mother ID: " + thisNode.datum().motherId)
             .attr("x", xpos).attr("y", ypos);
     //second column
-    ypos = CV.infoYpos + 20;
+    ypos = ColonyViz.infoYpos + 20;
     xpos += 150;
-    CV.infoText.append("tspan").text("Gender: " + thisNode.datum().gender)
+    ColonyViz.infoText.append("tspan").text("Gender: " + thisNode.datum().gender)
             .attr("x", xpos).attr("y", ypos);
     ypos += 20;
-    CV.infoText.append("tspan").text("Genotype: ")
+    ColonyViz.infoText.append("tspan").text("Genotype: ")
             .attr("x", xpos).attr("y", ypos);
     xpos += 20;
     ypos += 20;
-    CV.infoText.append("tspan").text(thisNode.datum().gene1 + " : " + thisNode.datum().genotype1)
+    ColonyViz.infoText.append("tspan").text(thisNode.datum().gene1 + " : " + thisNode.datum().genotype1)
             .attr("x", xpos).attr("y", ypos);
     ypos += 20;
-    CV.infoText.append("tspan").text(thisNode.datum().gene2 + " : " + thisNode.datum().genotype2)
+    ColonyViz.infoText.append("tspan").text(thisNode.datum().gene2 + " : " + thisNode.datum().genotype2)
             .attr("x", xpos).attr("y", ypos);
     ypos += 20;
-    CV.infoText.append("tspan").text(thisNode.datum().gene3 + " : " + thisNode.datum().genotype3)
+    ColonyViz.infoText.append("tspan").text(thisNode.datum().gene3 + " : " + thisNode.datum().genotype3)
             .attr("x", xpos).attr("y", ypos);
 }
 
 function handle_node_click(thisNode)
 {
-    var nodes = IV.tree.nodes(thisNode.datum().lineage);
-    var links = IV.tree.links(nodes);
+    var nodes = LineageViz.tree.nodes(thisNode.datum().lineage);
+    var links = LineageViz.tree.links(nodes);
     var graph = d3.select("#lineageGraph");
     // cleanup previous drawing
-    IV.svg.selectAll(".lineageNode").remove();
-    IV.svg.selectAll(".link").remove();
+    LineageViz.svg.selectAll(".lineageNode").remove();
+    LineageViz.svg.selectAll(".link").remove();
     d3.selectAll(".lineageTooltip").remove();
 
     // Update heading above lineage tree
-    IV.infoText.text("Lineage tree for mouse " + thisNode.datum().mouseId);
-    IV.infoText.style("font-style", "normal");
+    LineageViz.infoText.text("Lineage tree for mouse " + thisNode.datum().mouseId);
+    LineageViz.infoText.style("font-style", "normal");
 
     // Create lineage tree
-    var link = IV.svg.selectAll(".link")
+    var link = LineageViz.svg.selectAll(".link")
         .data(links)
         .enter()
         .append("path")
@@ -902,9 +903,9 @@ function handle_node_click(thisNode)
         .style("fill", "none")
         .style("stroke", "#cccccc")
         .style("stroke-width", "1.5px")
-        .attr("d", IV.diagonal);
+        .attr("d", LineageViz.diagonal);
 
-    var nodeElements = IV.svg.selectAll(".lineageNode")
+    var nodeElements = LineageViz.svg.selectAll(".lineageNode")
         .data(nodes)
         .enter().append("g")
         .attr("class", "lineageNode")
@@ -955,7 +956,7 @@ function handle_node_click(thisNode)
             handle_node_click(matchMouse);
         })
     // Update info header for number of children the selected mouse has
-    IV.childInfoText.text("Children: " + thisNode.datum().numOffspring);
+    LineageViz.childInfoText.text("Children: " + thisNode.datum().numOffspring);
     // Find data belonging to children inside existing nodes in main graph
     var treeChildren = [];
     d3.selectAll("#graph .node").each(function (d)
@@ -965,15 +966,15 @@ function handle_node_click(thisNode)
         }
     });
     // Draw children
-    var ypos = CV.infoYpos + IV.height - IV.childBlock + 30;
-    var drawnLineage = IV.svgChildNodes.selectAll(".lineageNode")
+    var ypos = ColonyViz.infoYpos + LineageViz.height - LineageViz.childBlock + 30;
+    var drawnLineage = LineageViz.svgChildNodes.selectAll(".lineageNode")
         //.data( thisNode.datum().childIds)
         .data(treeChildren, function (d)
         {
             return d.mouseId ? d.mouseId : d.name;
         });
     var childRadius = 4.5;
-    var nodesPerLine = Math.floor((IV.width - (childRadius * 6)) / (childRadius * 4));
+    var nodesPerLine = Math.floor((LineageViz.width - (childRadius * 6)) / (childRadius * 4));
     var matchMouse2;
     drawnLineage.enter().append("circle")
         .attr("r", childRadius)
@@ -1057,8 +1058,8 @@ function handle_mouseover(thisNode)
             .classed("hovered", false)
             .style("stroke", "rgb(150, 150, 150)")
             .style("stroke-width", "1.0px");
-        if (CV.pathsDisplayed) {
-            CV.pathsDisplayed
+        if (ColonyViz.pathsDisplayed) {
+            ColonyViz.pathsDisplayed
                 .classed("pathHovered", false)
                 .style("stroke", "rgba(255,255,255,0)");
         }
@@ -1067,7 +1068,7 @@ function handle_mouseover(thisNode)
             .style("stroke", "rgb(250,250,0)")
             .style("stroke-width", "3px");
         var endpoints = [];
-        CV.pathsDisplayed = CV.svg.selectAll("path.arrow").filter(function (d)
+        ColonyViz.pathsDisplayed = ColonyViz.svg.selectAll("path.arrow").filter(function (d)
         {
             if (d[0].id == thisNode.datum().mouseId) {
                 // save ids that are at other end of arrows
@@ -1080,7 +1081,7 @@ function handle_mouseover(thisNode)
             }
             else return false;
         });
-        CV.pathsDisplayed
+        ColonyViz.pathsDisplayed
                 .classed("pathHovered", true)
                 .style("stroke", "rgba(130,230,190,0.5)");
         // Highlight the endpoints of arrows
@@ -1101,27 +1102,27 @@ function handle_mouseover(thisNode)
 function create_initial_view(initNodes)
 {
     var divGraph = d3.select("#graph");
-    divGraph.attr("height", CV.height + 100)
-        .attr("width", CV.width + CV.infoWidth + 150);
+    divGraph.attr("height", ColonyViz.height + 100)
+        .attr("width", ColonyViz.width + ColonyViz.infoWidth + 150);
     divGraph.select("svg").remove();
-    CV.svg = divGraph.append("svg")
-            .attr("width", CV.width)
-            .attr("height", CV.height);
+    ColonyViz.svg = divGraph.append("svg")
+            .attr("width", ColonyViz.width)
+            .attr("height", ColonyViz.height);
 
     // Mouse info is left blank until hover event occurs
     var detailsGraph = d3.select("#mouseInfoDetails");
     detailsGraph.select("svg").remove();
     detailsGraph.append("svg")
         .attr("id", "mouseDetails")
-        .attr("width", CV.infoWidth)
-        .attr("height", CV.infoHeight);
+        .attr("width", ColonyViz.infoWidth)
+        .attr("height", ColonyViz.infoHeight);
 
     var lineageGraph = d3.select("#mouseInfoLineage");
     lineageGraph.select("svg").remove();
     lineageGraph.append("svg")
         .attr("id", "lineageGraph")
-        .attr("width", IV.width)
-        .attr("height", IV.height + IV.childBlock);
+        .attr("width", LineageViz.width)
+        .attr("height", LineageViz.height + LineageViz.childBlock);
 
     // Add event handlers to various view options
     d3.select("#selectColorGroup").on("change", handle_color);
@@ -1143,23 +1144,24 @@ function create_initial_view(initNodes)
     d3.select("#submitSearch").on("click", handle_search);
 
     // Use default color selection indicated by DOM dropdown element
+    //Instead of 
     var colorOption = d3.select("#selectColorGroup").node();
     //var colorBy = colorOption.options[colorOption.selectedIndex].value;
     var colorBy = "gender";//xihan
-    if (colorBy == "gender") { CV.color_fxn = assign_gender_color; }
-    else if (colorBy == "genotype") { CV.color_fxn = assign_genotype_color; }
-    else { CV.color_fxn = assign_gender_color; }
+    if (colorBy == "gender") { ColonyViz.color_fxn = assign_gender_color; }
+    else if (colorBy == "genotype") { ColonyViz.color_fxn = assign_genotype_color; }
+    else { ColonyViz.color_fxn = assign_gender_color; }
 
     for (var i = 0; i < initNodes.length; i++) {
-        var genGrp = CV.svg.append("g").datum(i)
+        var genGrp = ColonyViz.svg.append("g").datum(i)
                 .attr("id", "g" + i)
-                .attr("transform", "translate(" + CV.genFoci[i].dx + ", " + CV.genFoci[i].dy + ")");
+                .attr("transform", "translate(" + ColonyViz.genFoci[i].dx + ", " + ColonyViz.genFoci[i].dy + ")");
         genGrp.selectAll(".gen" + i).data(initNodes[i])
                 .enter()
                 .append("circle")
                 .attr("cx", function (d) { return d.x; })
                 .attr("cy", function (d) { return d.y; })
-                .attr("r", function (d) { return CV.fit_scale(d.r); })
+                .attr("r", function (d) { return ColonyViz.fit_scale(d.r); })
                 .classed("node", function (d) { return d.mouseId ? true : false; })
                 .classed("gen" + i, "true")
                 .style("stroke", "rgb(150,150,150)")
@@ -1168,7 +1170,7 @@ function create_initial_view(initNodes)
                 {
                     if (d.depth == 0) { return "rgba(255,255,255,0)"; }
                     else {
-                        return CV.color_fxn(d);
+                        return ColonyViz.color_fxn(d);
                     }
                 });
         genGrp.selectAll(".node")
@@ -1188,16 +1190,16 @@ function create_initial_view(initNodes)
                 {
                     var thisNode = d3.select(this);
                     if (thisNode.datum().mouseId) { //ignore hierarchy circles
-                        window.location.href = CV.href_individual(thisNode.datum().mouseId);
+                        window.location.href = ColonyViz.href_individual(thisNode.datum().mouseId);
                     }
                 });
     }
-    CV.svg.selectAll("g")
+    ColonyViz.svg.selectAll("g")
             .append("text")
             .attr("text-anchor", "middle")
             .text(function (d) { return "Gen" + d; })
-            .attr("x", function (d) { return CV.genFoci[d].x; })
-            .attr("y", CV.height - 25);
+            .attr("x", function (d) { return ColonyViz.genFoci[d].x; })
+            .attr("y", ColonyViz.height - 25);
 
 }
 
@@ -1310,15 +1312,15 @@ function create_gene_format(rawNodes)
 function add_genotype_filter(id, add_fxn)
 {
     add_fxn.id = id;
-    CV.active_genotype_filters.push(add_fxn);
+    ColonyViz.active_genotype_filters.push(add_fxn);
 }
 
 function restore_genotype_filter(id)
 {
-    for (var ff = 0; ff < CV.disabled_genotype_filters.length; ff++) {
-        if (CV.disabled_genotype_filters[ff].id == id) {
-            CV.active_genotype_filters.push(CV.disabled_genotype_filters[ff]);
-            CV.disabled_genotype_filters = CV.disabled_genotype_filters.filter(function (elem) { return elem.id != id; });
+    for (var ff = 0; ff < ColonyViz.disabled_genotype_filters.length; ff++) {
+        if (ColonyViz.disabled_genotype_filters[ff].id == id) {
+            ColonyViz.active_genotype_filters.push(ColonyViz.disabled_genotype_filters[ff]);
+            ColonyViz.disabled_genotype_filters = ColonyViz.disabled_genotype_filters.filter(function (elem) { return elem.id != id; });
             break;
         }
     }
@@ -1327,10 +1329,10 @@ function restore_genotype_filter(id)
 function remove_genotype_filter(id)
 {
     // move filter fxn to disabled list
-    for (var fi = 0; fi < CV.active_genotype_filters.length; fi++) {
-        if (CV.active_genotype_filters[fi].id == id) {
-            CV.disabled_genotype_filters.push(CV.active_genotype_filters[fi]);
-            CV.active_genotype_filters = CV.active_genotype_filters.filter(function (elem) { return elem.id != id; });
+    for (var fi = 0; fi < ColonyViz.active_genotype_filters.length; fi++) {
+        if (ColonyViz.active_genotype_filters[fi].id == id) {
+            ColonyViz.disabled_genotype_filters.push(ColonyViz.active_genotype_filters[fi]);
+            ColonyViz.active_genotype_filters = ColonyViz.active_genotype_filters.filter(function (elem) { return elem.id != id; });
             break;
         }
     }
@@ -1369,10 +1371,10 @@ function perform_filter_set(rawNode)
     // If no selections supplied, look for id in disabled_filter_fxns
     /*
     if ( typeof selections == 'undefined') {
-        for( var ff=0; ff < CV.disabled_filter_fxns.length; ff++) {
-            if (CV.disabled_filter_fxns[ff].id == id) {
-                add_fxn = CV.disabled_filter_fxns[ff];
-                CV.disabled_filter_fxns = CV.disabled_filter_fxns.filter( function( elem) { return elem.id != id; });
+        for( var ff=0; ff < ColonyViz.disabled_filter_fxns.length; ff++) {
+            if (ColonyViz.disabled_filter_fxns[ff].id == id) {
+                add_fxn = ColonyViz.disabled_filter_fxns[ff];
+                ColonyViz.disabled_filter_fxns = ColonyViz.disabled_filter_fxns.filter( function( elem) { return elem.id != id; });
                 break;
             }
         }
@@ -1382,14 +1384,14 @@ function perform_filter_set(rawNode)
     }
     else {
         // Save genotype filter set member. 
-        // The check of all genotype filters is combined here for use by CV.formattedData.add_filter
+        // The check of all genotype filters is combined here for use by ColonyViz.formattedData.add_filter
         add_fxn = check_grp.curry(selections);
         add_fxn.id = id;
     }
     */
     var matchedFilter = false;
-    for (var fi = 0; fi < CV.active_genotype_filters.length; fi++) {
-        matchedFilter = CV.active_genotype_filters[fi](rawNode);
+    for (var fi = 0; fi < ColonyViz.active_genotype_filters.length; fi++) {
+        matchedFilter = ColonyViz.active_genotype_filters[fi](rawNode);
         if (matchedFilter) {
             break;
         }
@@ -1405,8 +1407,8 @@ function layout_generations(genArray)
     var nodeLayouts = [];
     for (var i = 0; i < genArray.length; i++) {
         // The size for packing is currently based on last boundary circle size
-        nodeLayouts.push(d3.layout.pack().size([CV.genFoci[i].radius * 2, CV.height]).padding(10)
-                .value(CV.size_by)
+        nodeLayouts.push(d3.layout.pack().size([ColonyViz.genFoci[i].radius * 2, ColonyViz.height]).padding(10)
+                .value(ColonyViz.size_by)
                 .nodes(genArray[i]));
     }
     return nodeLayouts;
@@ -1418,7 +1420,7 @@ function update_view(nodeLayouts)
     set_scale_foci(nodeLayouts);
     // Update the translation for each generation based on any change in genFoci and radii
     for (var i = 0; i < nodeLayouts.length; i++) {
-        d3.select("#g" + i).attr("transform", "translate(" + CV.genFoci[i].dx + ", " + CV.genFoci[i].dy + ")");
+        d3.select("#g" + i).attr("transform", "translate(" + ColonyViz.genFoci[i].dx + ", " + ColonyViz.genFoci[i].dy + ")");
     }
     // Go through each generation in nodeLayout
     for (var i = 0; i < nodeLayouts.length; i++) {
@@ -1429,19 +1431,19 @@ function update_view(nodeLayouts)
             });
         // when the last gen is being updated, indicate ok to schedule arrow update
         if (i == nodeLayouts.length - 1) {
-            CV.arrowReady = true;
+            ColonyViz.arrowReady = true;
         }
         // Add any inner hierarchy circles
         genSelect.enter()
             .insert("circle")
             .attr("cx", function (d) { return d.x; })
             .attr("cy", function (d) { return d.y; })
-            .attr("r", function (d) { return CV.fit_scale(d.r); })
+            .attr("r", function (d) { return ColonyViz.fit_scale(d.r); })
             .classed("node", function (d) { return d.mouseId ? true : false; })
             .classed("gen" + i, "true")
             .style("stroke", "rgba(150,150,150,0.1)")
             .style("stroke-width", "1.0px")
-            .style("fill", function (d) { return d.mouseId ? CV.color_fxn(d) : "rgba(255,255,255,0)"; });
+            .style("fill", function (d) { return d.mouseId ? ColonyViz.color_fxn(d) : "rgba(255,255,255,0)"; });
         // Remove any hierarchy circles not needed
         genSelect.exit()
             .transition().duration(1200).style("stroke", "rgba(150, 150, 150, .2").remove();
@@ -1457,15 +1459,15 @@ function update_view(nodeLayouts)
                 })
                 .attr("cx", function (d) { return d.x; })
                 .attr("cy", function (d) { return d.y; })
-                .attr("r", function (d) { return CV.fit_scale(d.r); })
-            if (CV.arrowReady) {
+                .attr("r", function (d) { return ColonyViz.fit_scale(d.r); })
+            if (ColonyViz.arrowReady) {
                 thisTran.transition().call(function ()
                 {
-                    var lines = find_endpoints(CV.nodeLayout, CV.genFoci);
-                    draw_arrows(CV.svg, lines, AR.line_generator);
+                    var lines = find_endpoints(ColonyViz.nodeLayout, ColonyViz.genFoci);
+                    draw_arrows(ColonyViz.svg, lines, AR.line_generator);
                 });
                 // Only execute once
-                CV.arrowReady = false;
+                ColonyViz.arrowReady = false;
             }
             var colorOption = d3.select("#selectColorGroup").node();
             //var colorBy = colorOption.options[colorOption.selectedIndex].value;
@@ -1476,9 +1478,9 @@ function update_view(nodeLayouts)
                     .attr("transform", "translate(" + nodeData.x + "," + nodeData.y + ")")
                     .style("opacity", "1");
                 // check if the update has caused the size of the node to change
-                if (thisNode.attr("r") != CV.fit_scale(nodeData.r)) {
-                    CV.arc.outerRadius(nodeData.r);
-                    pieNode.selectAll("path").attr("d", CV.arc);
+                if (thisNode.attr("r") != ColonyViz.fit_scale(nodeData.r)) {
+                    ColonyViz.arc.outerRadius(nodeData.r);
+                    pieNode.selectAll("path").attr("d", ColonyViz.arc);
                 }
             }
         });
@@ -1492,9 +1494,9 @@ function update_view(nodeLayouts)
 function update_color(color_fxn)
 {
     if (typeof color_fxn !== 'undefined') {
-        CV.color_fxn = color_fxn;
+        ColonyViz.color_fxn = color_fxn;
     }
     d3.selectAll(".node").transition()
-            .style("fill", function (d) { return CV.color_fxn(d); });
+            .style("fill", function (d) { return ColonyViz.color_fxn(d); });
 }
 
