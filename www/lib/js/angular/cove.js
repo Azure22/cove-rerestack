@@ -184,6 +184,7 @@ app.factory('tokenInterceptor', ['tokenService', function (tokenService)
 app.controller('bodyController', ['$scope', '$location', 'authService', 'AUTH_EVENTS', 'colonyService', function ($scope, $location, authService, AUTH_EVENTS, colonyService)
 {
     //Attributes
+    $scope.uid = '';
     $scope.user = { username: '', password: '' };
     $scope.auth_display = 'none';
     $scope.signin_message = '';
@@ -201,6 +202,7 @@ app.controller('bodyController', ['$scope', '$location', 'authService', 'AUTH_EV
     {
         $scope.signin_message = '';
         $scope.signup_message = '';
+        $scope.user.password = '';
         $scope.auth_display = 'none';
     };
 
@@ -208,7 +210,10 @@ app.controller('bodyController', ['$scope', '$location', 'authService', 'AUTH_EV
     {
         authService.verify(function (message)
         {
-            if (message == AUTH_EVENTS.Authorized) $scope.getColonyList();
+            if (message == AUTH_EVENTS.Authorized) {
+                $scope.getColonyList();
+                $scope.uid = $scope.user.username;
+            }
             else $scope.logout();
         });
     };
@@ -220,9 +225,11 @@ app.controller('bodyController', ['$scope', '$location', 'authService', 'AUTH_EV
             case AUTH_EVENTS.loginSuccess:
                 $scope.hideAuthForm();
                 $scope.getColonyList();
+                $scope.uid = $scope.user.username;
                 break;
             case AUTH_EVENTS.loginFailed:
                 $scope.signin_message = "username or password invalid";
+                $scope.uid = '';
                 break;
             case AUTH_EVENTS.logoutSuccess:
                 $scope.showAuthForm();
