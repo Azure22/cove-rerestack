@@ -1,15 +1,17 @@
 // JavaScript source code
-function ColonyManager()
+function ColonyManager(data)
 {
     var that = this;
 
     //Attributes
-    this._mice = {};
+    this._mice = [];
+    this._miceDict = {};
+    this._groups = [];
 
     //constructorion
-    this.constructor = function ()
+    this.constructor = function (data)
     {
-
+        //this.loadColony(JSON.parse(data));
     }
 
     //Methods
@@ -17,49 +19,100 @@ function ColonyManager()
     {
         this.createColony = function (data)
         {
-            $http.get
+            //$http.get
         }
 
         this.loadColony = function (data)
         {
+            for (var i = 0, l = data.length; i < l; i++) {
+                this.addGroup(data[i]);
+            }
+            //console.log(this._groups);
 
+            for (var i = 0, l = this._groups.length; i < l; i++) {
+                this._mice = this._mice.concat(this._groups[i]._mice);
+            }
+            //console.log(this._mice);
+
+            for (var i = 0, l = this._mice.length; i < l; i++) {
+                this._miceDict[this._mice[i]._mouseId] = this._mice[i];
+            }
+            //console.log(this._miceDict);
+
+            for (var i = 0, l = this._mice.length; i < l; i++) {
+                this._mice[i].link(that);
+                //console.log(this._mice[i]._childs);
+            }
         }
 
-        this.selectMouse = function (mouseId)
+        this.selectGroup = function (groupId)
         {
 
         }
 
-        this.addMouse = function (mouseId)
+        this.addGroup = function (group)
         {
-            if (!(mouseId in this._mice)) {
-                var newMouse = new ColonyMouse();
-                this._mice[this._mice.length] = newMouse;
-            }
-            else {
-                console.log(mouseId + " exists!");
-            }
+            this._groups.push(new ColonyGroup(group));
         }
 
-        this.removeMouse = function (mouseId)
+        this.buildLineageTree = function (mouseId)
         {
-            if (mouseId in this._mice) {
-                this._mice.splice(this._mice.indexOf(mouseId), 1);
+            var m = this._miceDict[mouseId];
+            console.log(m._mouseId);
+            if (m._motherId) this.buildLineageTree(m._motherId);
+            if (m._fatherId) this.buildLineageTree(m._fatherId);
+            for (var i = 0, l = m._childIds.length; i < l; i++) {
+                this.buildLineageTree(m._childIds)
             }
-            else {
-                console.log(mouseId + " doesn't exist!");
-            }
+            
         }
 
         this._initialized = true;
     }
 
     //Call constructor
-    this.constructor();
+    this.constructor(data);
+}
+
+function ColonyGroup(data)
+{
+    var that = this;
+
+    //Attributes
+    this._mice = [];
+
+    //Constructor
+    this.constructor = function (data)
+    {
+        if (data)
+        {
+            for (var i = 0, l = data.length; i < l; i++) {
+                this._mice.push(new ColonyMouse(data[i]));
+            }
+        }
+        else
+        {
+            console.log("Empty group generated!");
+        }
+    }
+
+    //Methods
+    if (typeof this._initialized == "undefined") {
+
+        this.addMouse = function (manager, mouseId)
+        {
+            this._mice.push(manager._miceDict[mouseId]);
+        }
+
+        this._initialized = true;
+    }
+
+    //Call constructor
+    this.constructor(data);
 }
 
 // JavaScript source code
-function ColonyMouse()
+function ColonyMouse(data)
 {
     var that = this;
 
@@ -83,14 +136,40 @@ function ColonyMouse()
     this._generation = -1;
     this._fatherId = "";
     this._motherId = "";
-    this._numOffSpring = 0;
+
     this._childIds = [];
     this._lineage = {};
 
-    //constructorion
-    this.constructor = function ()
-    {
+    this._childs = [];
+    this._father = {};
+    this._mother = {};
 
+    //constructorion
+    this.constructor = function (data)
+    {
+        this._mouseId = data.mouseId;
+        this._gender = data.gender;
+        this._litter = data.litter;
+
+        this._dob = data.dob;
+        this._dobYear = data.dobYear;
+        this._dobMonth = data.dobMonth;
+        this._dobDay = data.dobDay;
+
+        this._gene1 = data.gene1;
+        this._gene2 = data.gene2;
+        this._gene3 = data.gene3;
+        this._genotype1 = data.genotype1;
+        this._genotype2 = data.genotype2;
+        this._genotype3 = data.genotype3;
+
+        this._generation = data.generation;
+        this._fatherId = data.fatherId;
+        this._motherId = data.motherId;
+
+        this._numOffSpring = data.numOffSpring;
+        this._childIds = data.childIds;
+        this._lineage = data.lineage;
     }
 
     //Methods
@@ -113,16 +192,16 @@ function ColonyMouse()
 
         this._updateDob = function ()
         {
-            var re = /(\d{4})(\d{2})(\d{2})/g;
-            var result = re.exec(this._dob);
-            if (result != null && result.length > 4) {
-                this._dobYear = +result[1];
-                this._dobMonth = +result[2];
-                this._dobDay = +result[3];
-            }
-            else {
-                console.log('Parse failed!');
-            }
+            //var re = /(\d{4})(\d{2})(\d{2})/g;
+            //var result = re.exec(this._dob);
+            //if (result != null && result.length > 4) {
+            //    this._dobYear = +result[1];
+            //    this._dobMonth = +result[2];
+            //    this._dobDay = +result[3];
+            //}
+            //else {
+            //    console.log('Parse failed!');
+            //}
         }
 
         this.DateOfBirth = function (value)
@@ -211,25 +290,13 @@ function ColonyMouse()
         }
 
         //Methods
-        this.addChild = function (mouseId)
+        this.link = function (manager)
         {
-            if (!(mouseId in this._childIds)) {
-                this._numOffSpring += 1;
-                this._childIds[this._childIds.length] = mouseId;
-            }
-            else {
-                console.log(mouseId + " exists!");
-            }
-        }
-
-        this.removeChild = function (mouseId)
-        {
-            if (mouseId in this._childIds) {
-                this._numOffSpring -= 1;
-                this._childIds.splice(this._childIds.indexOf(mouseId), 1);
-            }
-            else {
-                console.log(mouseId + " doesn't exist!");
+            for(var i = 0, l = this._childIds.length; i < l; i++)
+            {
+                this._childs.push(manager._miceDict[this._childIds[i]]);
+                this._mother = manager._miceDict[this._motherId];
+                this._father = manager._miceDict[this._fatherId];
             }
         }
 
@@ -242,9 +309,9 @@ function ColonyMouse()
     }
 
     //Call constructor
-    this.constructor();
+    this.constructor(data);
 }
 
-var m = new ColonyMouse();
-m._dob = '20150418';
-m._updateDob();
+var colonyManager = new ColonyManager();
+//m._dob = '20150418';
+//m._updateDob();

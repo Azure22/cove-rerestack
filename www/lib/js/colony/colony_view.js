@@ -807,8 +807,8 @@ function handle_hover_info(thisNode, tclass)
             .text(" ")
             .attr("x", xpos)
             .attr("y", ypos - 5);
-
     }
+
     // create background color for lineage tree
     if (d3.select("#lineageGraph rect").empty()) {
         var graph = d3.select("#lineageGraph");

@@ -185,7 +185,7 @@ app.controller('bodyController', ['$scope', '$location', 'authService', 'AUTH_EV
 {
     //Attributes
     $scope.uid = '';
-    $scope.user = { username: '', password: '' };
+    $scope.signin = { username: '', password: '' };
     $scope.auth_display = 'none';
     $scope.signin_message = '';
     $scope.signup_message = '';
@@ -202,7 +202,7 @@ app.controller('bodyController', ['$scope', '$location', 'authService', 'AUTH_EV
     {
         $scope.signin_message = '';
         $scope.signup_message = '';
-        $scope.user.password = '';
+        $scope.signin.password = '';
         $scope.auth_display = 'none';
     };
 
@@ -212,7 +212,7 @@ app.controller('bodyController', ['$scope', '$location', 'authService', 'AUTH_EV
         {
             if (message == AUTH_EVENTS.Authorized) {
                 $scope.getColonyList();
-                $scope.uid = $scope.user.username;
+                $scope.uid = $scope.signin.username;
             }
             else $scope.logout();
         });
@@ -225,7 +225,7 @@ app.controller('bodyController', ['$scope', '$location', 'authService', 'AUTH_EV
             case AUTH_EVENTS.loginSuccess:
                 $scope.hideAuthForm();
                 $scope.getColonyList();
-                $scope.uid = $scope.user.username;
+                $scope.uid = $scope.signin.username;
                 break;
             case AUTH_EVENTS.loginFailed:
                 $scope.signin_message = "username or password invalid";
@@ -239,7 +239,7 @@ app.controller('bodyController', ['$scope', '$location', 'authService', 'AUTH_EV
 
     $scope.login = function ()
     {
-        authService.login($scope.user, $scope.auth_events);
+        authService.login($scope.signin, $scope.auth_events);
     };
 
     $scope.logout = function ()
@@ -274,6 +274,12 @@ app.controller('bodyController', ['$scope', '$location', 'authService', 'AUTH_EV
         colonyService.getColonyData({ cid: cid }, function (d)
         {
             colonyService.drawColony(d);
+
+            colonyManager.loadColony(JSON.parse(d));
+
+            colonyManager.addGroup();
+            colonyManager._groups[4].addMouse(colonyManager, '344');
+            console.log(colonyManager._groups[4]._mice);
         });
     }
 

@@ -24,6 +24,7 @@
   <!-- Visualization -->
   <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
   <script src="./lib/js/colony/arrows.js" charset="utf-8"></script>
+    <script src="./lib/js/colony/colony_manager.js" charset="utf-8"></script>
   <script src="./lib/js/colony/colony_view.js" charset="utf-8"></script>
 </head>
 
@@ -70,13 +71,12 @@
               <button type="button" class="btn btn-default" ng-click="getColonyData(c.cid)">Show</button>
             </li>
           </ul>
-          <ul class="list-group one-half">
-            <li class="list-group-item" ng-repeat="c in colony_list">
-              <span class="badge">{{c.control}}</span>
-              {{c.cid}}
-              <button type="button" class="btn btn-default" ng-click="getColonyData(c.cid)">Show</button>
-            </li>
-          </ul>
+          <input type="radio" name="gender" value="All" checked="true">
+          <input type="radio" name="gender" value="M">
+          <input type="radio" name="gender" value="F">
+          <br /><input type="checkbox" id="litterCheck" value="litter" />Litter
+          <br />Search<input id="searchMouse" type="text" name="searchbox" />
+          <input id="submitSearch" type="button" value="Find" />
         </div>
       </div>
       <div class="col col-md-2">
@@ -105,16 +105,14 @@
       <!-- Tab panes -->
       <div class="tab-content">
         <div role="tabpanel" class="tab-pane active" id="signin">
-          <form class="form-auth">
+          <form class="form-group form-auth">
             <label for="inputUsername" class="sr-only">Username</label>
-            <input type="text" id="inputUsername" class="form-control" placeholder="Username" autofocus="" ng-model="user.username">
+            <input type="text" id="inputUsername" class="form-control" placeholder="Username" autofocus="" ng-model="signin.username">
             <label for="inputPassword" class="sr-only">Password</label>
-            <input type="password" id="inputPassword" class="form-control" placeholder="Password" ng-model="user.password">
-            <label class="auth-message">{{signin_message}}</label>
-            <p>
-              <button class="btn btn-primary btn-block" type="submit" ng-click="login()">Sign in</button>
-              <button class="btn btn-default btn-block" type="submit" ng-click="hideAuthForm()">Cancel</button>
-            </p>
+            <input type="password" id="inputPassword" class="form-control" placeholder="Password" ng-model="signin.password">
+            <label class="auth-message text-danger">{{signin_message}}</label><br />
+            <button class="btn btn-primary one-half" type="submit" ng-click="login()">Sign in</button>
+            <button class="btn btn-default one-half" type="submit" ng-click="hideAuthForm()">Cancel</button>
           </form>
         </div>
         <div role="tabpanel" class="tab-pane" id="signup">
